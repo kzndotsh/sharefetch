@@ -1,13 +1,13 @@
 ---
 name: Sharefetch
-description: Dark walnut chrome around a copper-accented fetch printout.
+description: Graphite chrome around a lemon-accented fetch printout.
 colors:
-  bg: "#14110f"
-  paper: "#1c1814"
-  fg: "#ece6d8"
-  muted: "#8a8376"
-  accent: "#c45c26"
-  border: "#3a342c"
+  bg: "#0e1216"
+  paper: "#161c22"
+  fg: "#d7dee5"
+  muted: "#7d8894"
+  accent: "#e6c200"
+  border: "#2c343d"
 typography:
   display:
     fontFamily: "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
@@ -110,36 +110,36 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Copper Printout"**
+**Creative North Star: "The Cold Aisle"**
 
-Sharefetch looks like a warm terminal that just printed a fetch card. The page is walnut (`#14110f`); every claim about a stack sits on a slightly lifted paper (`#1c1814`) with a 1px hairline. Copper (`#c45c26`) is not a brand wash. It is the cursor: the header square, the SVG corner ticks, the primary publish action, the active facet, the focus ring.
+Sharefetch looks like a listing under fluorescent machine-room light. The page is graphite (`#0e1216`); every claim about a stack sits on a slightly lifted console paper (`#161c22`) with a 1px hairline. Lemon (`#e6c200`) is not a brand wash. It is the caution lamp: the header square, the SVG corner ticks, the primary publish action, the active facet, the focus ring.
 
 IBM Plex Mono is the reading voice because a fetch is typed data. IBM Plex Sans is chrome only: nav, buttons, uppercase labels, the footer. The two faces never swap roles.
 
-Embed themes (`dracula`, `gruvbox`, `nord`, and the rest) recolor the **SVG card**, never the site. Site chrome stays this walnut system so a README screenshot of the product still matches the product.
+Embed themes (`dracula`, `gruvbox`, `nord`, and the rest) recolor the **SVG card**, never the site. Site chrome stays this graphite system so a README screenshot of the product still matches the product.
 
 **Key Characteristics:**
 - Square corners everywhere. Radius is a defect.
-- Hairline borders (`#3a342c`), not shadows as the default depth cue.
-- Copper used as a rare signal, not a fill.
+- Hairline borders (`#2c343d`), not shadows as the default depth cue.
+- Lemon used as a rare signal, not a fill.
 - Mono body, sans chrome. Uppercase tracked labels.
 - The printout (card / builder section / live preview frame) is the signature silhouette.
 
 ## Colors
 
-A warm dark room: walnut ground, slightly lighter paper for claims, bone text, copper as the only saturated voice.
+A cold aisle: graphite ground, slightly lighter console paper for claims, mist text, lemon as the only saturated voice.
 
 ### Primary
-- **Copper rust** (`{colors.accent}`): primary buttons, active chips, focus outline, header 8px square, SVG accent ticks, builder section numbers, hover on fetch titles. Selection invert: copper fill, walnut text.
+- **Caution lamp** (`{colors.accent}`): primary buttons, active chips, focus outline, header 8px square, SVG accent ticks, builder section numbers, hover on fetch titles. Selection invert: lemon fill, graphite text.
 
 ### Neutral
-- **Walnut ground** (`{colors.bg}`): page, field interiors, the hole the printout sits in.
-- **Print paper** (`{colors.paper}`): printouts, default buttons, header/footer sit on ground not paper.
-- **Bone** (`{colors.fg}`): body and titles.
-- **Dust** (`{colors.muted}`): labels, eyebrows, handles, verified dates, secondary links, chip counts.
-- **Hairline** (`{colors.border}`): every stroke. Hover on default buttons and chips shifts the stroke to dust, not copper, unless the control is active.
+- **Graphite ground** (`{colors.bg}`): page, field interiors, the hole the printout sits in.
+- **Console paper** (`{colors.paper}`): printouts, default buttons, header/footer sit on ground not paper.
+- **Mist** (`{colors.fg}`): body and titles.
+- **Conduit** (`{colors.muted}`): labels, eyebrows, handles, verified dates, secondary links, chip counts.
+- **Steel** (`{colors.border}`): every stroke. Hover on default buttons and chips shifts the stroke to conduit, not lemon, unless the control is active.
 
-**The Rare Copper Rule.** Copper occupies a small fraction of any screen. Filling a printout, a sidebar, or a hero with accent is a different product.
+**The Rare Lemon Rule.** Lemon occupies a small fraction of any screen. Filling a printout, a sidebar, or a hero with accent is a different product.
 
 **The Site Is Not the Theme Rule.** `spec.theme` only paints the embed. Do not restyle `body` from an embed theme.
 
@@ -157,7 +157,7 @@ A warm dark room: walnut ground, slightly lighter paper for claims, bone text, c
 - **Title** (500, 14px): fetch-card titles in the grid.
 - **Body** (400, 14px / 1.55): default document text. Measure ~65ch on marketing copy (`max-w-prose`).
 - **Label** (400, 11px, 0.1em, uppercase): form labels, section kicker type on fetch pages.
-- **Eyebrow** (400, 12px sans, 0.18em, uppercase, dust): "a fetch you can embed", "latest verified", "new fetch", "live card".
+- **Eyebrow** (400, 12px sans, 0.18em, uppercase, conduit): "a fetch you can embed", "latest verified", "new fetch", "live card".
 - **Chrome** (400, 13px sans): buttons. Chips are 12px, usually inheriting mono unless inside `.chrome`.
 - **Kind cue** (400, 10px sans, 0.08em, uppercase): `WM` / `DE` / `compositor`.
 
@@ -184,7 +184,7 @@ Density is compact like a TUI, not sparse like a SaaS dashboard. Do not add card
 Mostly flat. Depth is a 1px hairline plus one printout shadow: a 1px same-color ledge and a tight dark well (`0 1px 0 {colors.border}, 0 12px 32px -20px rgba(0, 0, 0, 0.9)`). No blur, no glow, no colored shadows.
 
 ### Shadow Vocabulary
-- **Print well** (`box-shadow: 0 1px 0 #3a342c, 0 12px 32px -20px rgba(0, 0, 0, 0.9)`): `.printout` only. Not on buttons, chips, or the header.
+- **Print well** (`box-shadow: 0 1px 0 #2c343d, 0 12px 32px -20px rgba(0, 0, 0, 0.9)`): `.printout` only. Not on buttons, chips, or the header.
 
 **The Printout-Only Lift Rule.** If it is not a fetch card, a builder section, or the live preview frame, it stays flush with the ground.
 
@@ -192,9 +192,9 @@ Mostly flat. Depth is a 1px hairline plus one printout shadow: a 1px same-color 
 
 **The Square Rule.** Radius is `0`. Buttons, chips, fields, printouts, kind cues, the header mark: all rectangles.
 
-Hairlines are 1px solid `{colors.border}`. Kind cues and chips share that stroke. The header mark is an 8×8 copper square; the default SVG repeats 10×10 and 6×6 copper squares. Do not replace those with circles or status dots.
+Hairlines are 1px solid `{colors.border}`. Kind cues and chips share that stroke. The header mark is an 8×8 lemon square; the default SVG repeats 10×10 and 6×6 lemon squares. Do not replace those with circles or status dots.
 
-Focus: `1px solid` copper, `2px` offset. Fields drop the outline and only recolor the border to copper.
+Focus: `1px solid` lemon, `2px` offset. Fields drop the outline and only recolor the border to lemon.
 
 Motion: 120ms ease on border/background/color. Honor `prefers-reduced-motion`. Do not invent entrance animations.
 
@@ -202,13 +202,13 @@ Motion: 120ms ease on border/background/color. Honor `prefers-reduced-motion`. D
 
 ### Buttons
 - **Shape:** square, 1px stroke, sans 13px, padding ~7px 14px, inline-flex, gap 0.4rem.
-- **Default:** paper fill, bone text, hairline. Hover: stroke becomes dust. Disabled: 45% opacity.
-- **Primary:** copper fill and stroke, walnut text, weight 600. Hover: `brightness(1.08)`, stroke stays copper.
-- **Focus:** copper outline, 2px offset (global).
+- **Default:** paper fill, mist text, hairline. Hover: stroke becomes conduit. Disabled: 45% opacity.
+- **Primary:** lemon fill and stroke, graphite text, weight 600. Hover: `brightness(1.08)`, stroke stays lemon.
+- **Focus:** lemon outline, 2px offset (global).
 
 ### Chips
-- **Style:** transparent fill, 1px hairline, 12px type, padding 3px 9px. Count in dust.
-- **Active:** copper stroke and copper text (`data-active="true"`). Not a filled pill.
+- **Style:** transparent fill, 1px hairline, 12px type, padding 3px 9px. Count in conduit.
+- **Active:** lemon stroke and lemon text (`data-active="true"`). Not a filled pill.
 - **Use:** Explore facets, embed themes, builder pane toggle, section reorder.
 
 ### Cards / Printouts
@@ -217,41 +217,41 @@ Motion: 120ms ease on border/background/color. Honor `prefers-reduced-motion`. D
 - **Shadow Strategy:** print well, see Elevation.
 - **Border:** 1px hairline.
 - **Internal Padding:** 12px around an SVG, 16px around a fetch-card or builder section.
-- **Rows:** 7.5rem mute key, value in bone, 1px divider between rows, none after the last.
+- **Rows:** 7.5rem mute key, value in mist, 1px divider between rows, none after the last.
 
 ### Inputs / Fields
-- **Style:** walnut well, 1px hairline, 13px mono, padding 8px 10px.
-- **Focus:** copper border, no glow.
-- **Placeholder:** dust at 70% opacity.
-- **Label:** sans 11px uppercase tracked, dust, 5px gap above the field.
+- **Style:** graphite well, 1px hairline, 13px mono, padding 8px 10px.
+- **Focus:** lemon border, no glow.
+- **Placeholder:** conduit at 70% opacity.
+- **Label:** sans 11px uppercase tracked, conduit, 5px gap above the field.
 
 ### Navigation
-- Header: sans chrome, 1px bottom hairline, 48px. Wordmark is **mono** uppercase `0.18em` tracking with the copper square. Nav links dust → bone on hover. **Create fetch** is the only primary button in the bar.
-- Footer: hairline rule, sans 12px dust, same max width and inset.
+- Header: sans chrome, 1px bottom hairline, 48px. Wordmark is **mono** uppercase `0.18em` tracking with the lemon square. Nav links conduit → mist on hover. **Create fetch** is the only primary button in the bar.
+- Footer: hairline rule, sans 12px conduit, same max width and inset.
 
 ### Kind cue
-Boxed 10px uppercase `WM` / `DE` / `compositor`. Dust text, hairline. Never color-code kind with copper or three different hues; the letters are the distinction.
+Boxed 10px uppercase `WM` / `DE` / `compositor`. Conduit text, hairline. Never color-code kind with lemon or three different hues; the letters are the distinction.
 
 ### Kind pick
-Choice wells **inside** a printout (desktop kind). Walnut fill, 1px hairline, no print-well shadow. Active well uses a copper stroke (`data-active="true"`). Nested `.printout` here is a defect.
+Choice wells **inside** a printout (desktop kind). Graphite fill, 1px hairline, no print-well shadow. Active well uses a lemon stroke (`data-active="true"`). Nested `.printout` here is a defect.
 
 ### Fetch grid item
-A printout whose title is a mono 14px 500 link (copper on hover), handle in 12px dust, four printout-rows max (desktop, distro, colors, utils), then the verified line.
+A printout whose title is a mono 14px 500 link (lemon on hover), handle in 12px conduit, four printout-rows max (desktop, distro, colors, utils), then the verified line.
 
 ### Verified
-12px dust. When older than 90 days, append ` · stale`. Stale is copy, not a second accent color, until a dedicated stale token exists.
+12px conduit. When older than 90 days, append ` · stale`. Stale is copy, not a second accent color, until a dedicated stale token exists.
 
 ## Do's and Don'ts
 
 ### Do:
 - **Do** put claims (stacks, live SVG, JSON, paste) inside a printout.
-- **Do** keep copper rare: one primary action per cluster, active chips, focus, the square mark.
+- **Do** keep lemon rare: one primary action per cluster, active chips, focus, the square mark.
 - **Do** use uppercase tracked eyebrows and labels for shell; sentence case for titles and values.
 - **Do** keep embed theme switching on the card, not on `body`.
 
 ### Don't:
 - **Don't** round corners, add glass, neon, or a second saturated hue in chrome.
 - **Don't** set body in Plex Sans or labels in a third family.
-- **Don't** fill chips or kind cues with copper.
+- **Don't** fill chips or kind cues with lemon.
 - **Don't** restyle the app from Catppuccin/Nord/etc. Those are card skins.
-- **Don't** replace the copper squares with logos, gradients, or status dots.
+- **Don't** replace the lemon squares with logos, gradients, or status dots.
