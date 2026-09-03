@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-03T05:47:00.000Z",
+  "title": "Design System: Sharefetch",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Copper rust",
+        "canonical": "#c45c26",
+        "tonalRamp": [
+          "#3a1608",
+          "#5c2410",
+          "#843318",
+          "#c45c26",
+          "#d47a48",
+          "#e4a07a",
+          "#f0c8b0",
+          "#f8e8dc"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Walnut ground",
+        "canonical": "#14110f",
+        "tonalRamp": [
+          "#0a0908",
+          "#14110f",
+          "#1c1814",
+          "#2a2520",
+          "#3a342c",
+          "#5c564c",
+          "#8a8376",
+          "#ece6d8"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Print paper",
+        "canonical": "#1c1814",
+        "tonalRamp": [
+          "#0a0908",
+          "#14110f",
+          "#1c1814",
+          "#2a2520",
+          "#3a342c",
+          "#5c564c",
+          "#8a8376",
+          "#ece6d8"
+        ]
+      },
+      "fg": {
+        "role": "neutral",
+        "displayName": "Bone",
+        "canonical": "#ece6d8",
+        "tonalRamp": [
+          "#2a2520",
+          "#3a342c",
+          "#5c564c",
+          "#8a8376",
+          "#b8b09e",
+          "#d4cec0",
+          "#ece6d8",
+          "#f7f3ea"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Dust",
+        "canonical": "#8a8376",
+        "tonalRamp": [
+          "#2a2520",
+          "#3a342c",
+          "#5c564c",
+          "#6e675c",
+          "#8a8376",
+          "#a8a090",
+          "#c4bca8",
+          "#ece6d8"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#3a342c",
+        "tonalRamp": [
+          "#14110f",
+          "#1c1814",
+          "#2a2520",
+          "#3a342c",
+          "#4e473c",
+          "#6e675c",
+          "#8a8376",
+          "#ece6d8"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Home h1 only." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles on builder and fetch." },
+      "title": { "displayName": "Title", "purpose": "Fetch-card titles in grids." },
+      "body": { "displayName": "Body", "purpose": "Default document and printout values." },
+      "label": { "displayName": "Label", "purpose": "Uppercase form and section labels." },
+      "chrome": { "displayName": "Chrome", "purpose": "Buttons and shell controls." },
+      "eyebrow": { "displayName": "Eyebrow", "purpose": "Tracked uppercase kickers." },
+      "kindCue": { "displayName": "Kind cue", "purpose": "Boxed WM / DE / CMP letters." }
+    },
+    "shadows": [
+      {
+        "name": "print-well",
+        "value": "0 1px 0 var(--border), 0 12px 32px -20px rgba(0, 0, 0, 0.9)",
+        "purpose": "Only on .printout: a hairline ledge plus a tight dark well."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-control",
+        "value": "120ms ease",
+        "purpose": "Border, background, and color on buttons and chips."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Paper fill, hairline stroke. Hover dusts the border.",
+      "html": "<button class=\"ds-btn\" type=\"button\">JSON export</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border: 1px solid var(--border, #3a342c); background: var(--paper, #1c1814); color: var(--fg, #ece6d8); font-family: \"IBM Plex Sans\", system-ui, sans-serif; font-size: 13px; line-height: 1; white-space: nowrap; cursor: pointer; border-radius: 0; transition: border-color 120ms ease, background 120ms ease; } .ds-btn:hover:not(:disabled) { border-color: var(--muted, #8a8376); } .ds-btn:focus-visible { outline: 1px solid var(--accent, #c45c26); outline-offset: 2px; } .ds-btn:disabled { opacity: 0.45; cursor: not-allowed; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Copper fill, walnut text. The one publish/create action in a cluster.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Publish</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border: 1px solid var(--accent, #c45c26); background: var(--accent, #c45c26); color: var(--bg, #14110f); font-family: \"IBM Plex Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; border-radius: 0; transition: filter 120ms ease, border-color 120ms ease; } .ds-btn-primary:hover:not(:disabled) { filter: brightness(1.08); } .ds-btn-primary:focus-visible { outline: 1px solid var(--accent, #c45c26); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Transparent facet. Active is copper stroke and text, never a fill.",
+      "html": "<button class=\"ds-chip\" type=\"button\" data-active=\"true\">hyprland <span class=\"ds-chip-count\">12</span></button>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.55rem; border: 1px solid var(--border, #3a342c); color: var(--fg, #ece6d8); font-size: 12px; line-height: 1.4; background: transparent; cursor: pointer; border-radius: 0; transition: border-color 120ms ease, color 120ms ease; } .ds-chip:hover { border-color: var(--muted, #8a8376); } .ds-chip[data-active=\"true\"] { border-color: var(--accent, #c45c26); color: var(--accent, #c45c26); } .ds-chip:focus-visible { outline: 1px solid var(--accent, #c45c26); outline-offset: 2px; } .ds-chip-count { color: var(--muted, #8a8376); }"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Walnut well, mono 13px. Focus recolors the hairline to copper.",
+      "html": "<label class=\"ds-label\" for=\"ds-q\">Search title or handle</label><input id=\"ds-q\" class=\"ds-field\" placeholder=\"hyprland, moth, minimal\" />",
+      "css": ".ds-label { display: block; margin-bottom: 0.3rem; color: var(--muted, #8a8376); font-family: \"IBM Plex Sans\", system-ui, sans-serif; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; } .ds-field { width: 100%; padding: 0.5rem 0.65rem; background: var(--bg, #14110f); border: 1px solid var(--border, #3a342c); color: var(--fg, #ece6d8); font-family: \"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; border-radius: 0; } .ds-field:focus { outline: none; border-color: var(--accent, #c45c26); } .ds-field:focus-visible { outline: 1px solid var(--accent, #c45c26); outline-offset: 2px; } .ds-field::placeholder { color: var(--muted, #8a8376); opacity: 0.7; }"
+    },
+    {
+      "name": "Printout",
+      "kind": "card",
+      "refersTo": "printout",
+      "description": "The signature sheet: paper fill, hairline, print-well shadow, keyed rows.",
+      "html": "<article class=\"ds-printout\"><div class=\"ds-printout-row\"><dt>desktop</dt><dd>Hyprland <span class=\"ds-kind\">CMP</span></dd></div><div class=\"ds-printout-row\"><dt>distro</dt><dd>Arch Linux</dd></div></article>",
+      "css": ".ds-printout { background: var(--paper, #1c1814); border: 1px solid var(--border, #3a342c); box-shadow: 0 1px 0 var(--border, #3a342c), 0 12px 32px -20px rgba(0, 0, 0, 0.9); padding: 16px; color: var(--fg, #ece6d8); font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 12px; border-radius: 0; } .ds-printout-row { display: grid; grid-template-columns: 7.5rem 1fr; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px solid var(--border, #3a342c); margin: 0; } .ds-printout-row:last-child { border-bottom: 0; } .ds-printout-row dt { color: var(--muted, #8a8376); margin: 0; } .ds-printout-row dd { margin: 0; display: flex; align-items: center; gap: 0.5rem; } .ds-kind { display: inline-block; padding: 0 0.35rem; border: 1px solid var(--border, #3a342c); color: var(--muted, #8a8376); font-family: \"IBM Plex Sans\", system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.5; }"
+    },
+    {
+      "name": "Site Header",
+      "kind": "nav",
+      "refersTo": "button-primary",
+      "description": "48px chrome bar. Mono wordmark with 8px copper square; Create fetch is the only primary.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-mark\" href=\"/\"><span class=\"ds-sq\"></span>sharefetch</a><nav><a class=\"ds-link\" href=\"/\">Home</a><a class=\"ds-link\" href=\"/explore\">Explore</a><a class=\"ds-btn-primary\" href=\"/new\">Create fetch</a></nav></header>",
+      "css": ".ds-nav { display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 20px; border-bottom: 1px solid var(--border, #3a342c); background: var(--bg, #14110f); font-family: \"IBM Plex Sans\", system-ui, sans-serif; } .ds-nav nav { display: flex; align-items: center; gap: 1.25rem; font-size: 14px; } .ds-mark { font-family: \"IBM Plex Mono\", ui-monospace, monospace; font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fg, #ece6d8); text-decoration: none; } .ds-sq { display: inline-block; width: 8px; height: 8px; background: var(--accent, #c45c26); margin-right: 8px; vertical-align: middle; } .ds-link { color: var(--muted, #8a8376); text-decoration: none; } .ds-link:hover { color: var(--fg, #ece6d8); } .ds-btn-primary { display: inline-flex; align-items: center; padding: 0.45rem 0.9rem; border: 1px solid var(--accent, #c45c26); background: var(--accent, #c45c26); color: var(--bg, #14110f); font-family: \"IBM Plex Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 600; text-decoration: none; border-radius: 0; }"
+    },
+    {
+      "name": "Kind Cue",
+      "kind": "custom",
+      "refersTo": "kind-cue",
+      "description": "Boxed WM / DE / CMP. Letters distinguish kind; color does not.",
+      "html": "<span class=\"ds-kind-cue\">CMP</span>",
+      "css": ".ds-kind-cue { display: inline-block; padding: 0 0.35rem; border: 1px solid var(--border, #3a342c); color: var(--muted, #8a8376); font-family: \"IBM Plex Sans\", system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.5; vertical-align: middle; border-radius: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Copper Printout",
+    "overview": "Sharefetch looks like a warm terminal that just printed a fetch card. The page is walnut (#14110f); every claim about a stack sits on a slightly lifted paper (#1c1814) with a 1px hairline. Copper (#c45c26) is not a brand wash. It is the cursor: the header square, the SVG corner ticks, the primary publish action, the active facet, the focus ring.\n\nIBM Plex Mono is the reading voice because a fetch is typed data. IBM Plex Sans is chrome only: nav, buttons, uppercase labels, the footer. The two faces never swap roles.\n\nEmbed themes (dracula, gruvbox, nord, and the rest) recolor the SVG card, never the site. Site chrome stays this walnut system so a README screenshot of the product still matches the product.",
+    "keyCharacteristics": [
+      "Square corners everywhere. Radius is a defect.",
+      "Hairline borders (#3a342c), not shadows as the default depth cue.",
+      "Copper used as a rare signal, not a fill.",
+      "Mono body, sans chrome. Uppercase tracked labels.",
+      "The printout (card / builder section / live preview frame) is the signature silhouette."
+    ],
+    "rules": [
+      {
+        "name": "The Rare Copper Rule",
+        "body": "Copper occupies a small fraction of any screen. Filling a printout, a sidebar, or a hero with accent is a different product.",
+        "section": "colors"
+      },
+      {
+        "name": "The Site Is Not the Theme Rule",
+        "body": "spec.theme only paints the embed. Do not restyle body from an embed theme.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Voice Rule",
+        "body": ".chrome (and .label, .btn, .kind-cue) is Sans. Everything that is a value — titles, fields, JSON, printout dd — is Mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The Printout-Only Lift Rule",
+        "body": "If it is not a fetch card, a builder section, or the live preview frame, it stays flush with the ground.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Square Rule",
+        "body": "Radius is 0. Buttons, chips, fields, printouts, kind cues, the header mark: all rectangles.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do put claims (stacks, live SVG, JSON, paste) inside a printout.",
+      "Do keep copper rare: one primary action per cluster, active chips, focus, the square mark.",
+      "Do use uppercase tracked eyebrows and labels for shell; sentence case for titles and values.",
+      "Do keep embed theme switching on the card, not on body."
+    ],
+    "donts": [
+      "Don't round corners, add glass, neon, or a second saturated hue in chrome.",
+      "Don't set body in Plex Sans or labels in a third family.",
+      "Don't fill chips or kind cues with copper.",
+      "Don't restyle the app from Catppuccin/Nord/etc. Those are card skins.",
+      "Don't replace the copper squares with logos, gradients, or status dots."
+    ]
+  }
+}

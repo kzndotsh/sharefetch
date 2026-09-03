@@ -48,6 +48,7 @@ a {
 .printout {
   background: var(--paper);
   border: 1px solid var(--border);
+  border-radius: 0;
   box-shadow:
     0 1px 0 var(--border),
     0 12px 32px -20px rgba(0, 0, 0, 0.9);
@@ -71,6 +72,7 @@ a {
   gap: 0.4rem;
   padding: 0.45rem 0.9rem;
   border: 1px solid var(--border);
+  border-radius: 0;
   background: var(--paper);
   color: var(--fg);
   font-family: var(--font-sans);
@@ -110,6 +112,7 @@ a {
   gap: 0.35rem;
   padding: 0.2rem 0.55rem;
   border: 1px solid var(--border);
+  border-radius: 0;
   color: var(--fg);
   font-size: 12px;
   line-height: 1.4;
@@ -119,6 +122,11 @@ a {
   transition:
     border-color 120ms ease,
     color 120ms ease;
+}
+
+.chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .chip:hover {
@@ -138,6 +146,7 @@ a {
   display: inline-block;
   padding: 0 0.35rem;
   border: 1px solid var(--border);
+  border-radius: 0;
   color: var(--muted);
   font-family: var(--font-sans);
   font-size: 10px;
@@ -147,19 +156,48 @@ a {
   vertical-align: middle;
 }
 
+.kind-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color 120ms ease;
+}
+
+.kind-pick:hover {
+  border-color: var(--muted);
+}
+
+.kind-pick[data-active="true"] {
+  border-color: var(--accent);
+}
+
 .field {
   width: 100%;
   padding: 0.5rem 0.65rem;
   background: var(--bg);
   border: 1px solid var(--border);
+  border-radius: 0;
   color: var(--fg);
+  caret-color: var(--accent);
   font-family: var(--font-mono);
   font-size: 13px;
 }
 
-.field:focus {
+.field:focus,
+.field:focus-visible {
   outline: none;
   border-color: var(--accent);
+}
+
+select.field {
+  color-scheme: dark;
 }
 
 .field::placeholder {

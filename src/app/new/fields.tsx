@@ -51,7 +51,14 @@ export function ChipButton({
   title?: string;
 }) {
   return (
-    <button type="button" className="chip" data-active={active} onClick={onClick} title={title}>
+    <button
+      type="button"
+      className="chip"
+      data-active={active}
+      aria-pressed={active}
+      onClick={onClick}
+      title={title}
+    >
       {children}
     </button>
   );
@@ -109,6 +116,7 @@ export function LabeledPicker({
           className="field"
           value={custom}
           placeholder={customPlaceholder}
+          aria-label={customPlaceholder}
           onChange={(e) => setCustom(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -153,7 +161,7 @@ export function RowList<T>({
             aria-label="Remove row"
             onClick={() => onChange(items.filter((_, i) => i !== index))}
           >
-            ×
+            Remove
           </button>
         </div>
       ))}

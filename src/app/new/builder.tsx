@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { pasteIntoSpec, publishFetch } from "@/app/actions";
 import { CopyButton } from "@/components/copy-button";
 import {
@@ -45,8 +45,6 @@ function svgDataUrl(svg: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-const subscribeNever = () => () => {};
-
 function resolveInitial(editId: string | undefined, existing: Loaded | null): Initial {
   const draft = readDraft(window.localStorage);
   if (editId && draft?.id === editId) {
@@ -74,16 +72,19 @@ export function Builder({
   editId?: string;
   existing: Loaded | null;
 }) {
-  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
-  if (!hydrated) {
-    return <p className="text-muted text-sm">Loading draft…</p>;
-  }
-  return <BuilderForm initial={resolveInitial(editId, existing)} />;
+  return <BuilderForm editId={editId} existing={existing} />;
 }
 
-function BuilderForm({ initial }: { initial: Initial }) {
-  const [loaded, setLoaded] = useState<Loaded>(initial.loaded);
-  const [status, setStatus] = useState<Status>(initial.status);
+function BuilderForm({
+  editId,
+  existing,
+}: {
+  editId?: string;
+  existing: Loaded | null;
+}) {
+  const [loaded, setLoaded] = useState<Loaded>(() => existing ?? { spec: emptyFetchSpec() });
+  const [status, setStatus] = useState<Status>(null);
+  const [draftReady, setDraftReady] = useState(false);
   const [pane, setPane] = useState<Pane>("preview");
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
@@ -91,9 +92,19 @@ function BuilderForm({ initial }: { initial: Initial }) {
   const [publishing, setPublishing] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  useLayoutEffect(() => {
+    const initial = resolveInitial(editId, existing);
+    setLoaded(initial.loaded);
+    setStatus(initial.status);
+    setDraftReady(true);
+  }, [editId, existing]);
+
   useEffect(() => {
+    if (!draftReady) {
+      return;
+    }
     writeDraft(window.localStorage, loaded);
-  }, [loaded]);
+  }, [draftReady, loaded]);
 
   const spec = loaded.spec;
   const svg = useMemo(
@@ -193,19 +204,33 @@ function BuilderForm({ initial }: { initial: Initial }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <p className="chrome text-xs tracking-[0.18em] uppercase text-muted">
-            {loaded.id ? `editing ${loaded.id}` : "new fetch"} · draft saved locally
-          </p>
-          <h1 className="text-2xl font-medium">{spec.title || "Untitled fetch"}</h1>
+      <header className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-col gap-1 min-w-0">
+            <p className="chrome text-xs tracking-[0.18em] uppercase text-muted">
+              {loaded.id ? `editing ${loaded.id}` : "new fetch"}
+              {draftReady ? " · draft saved locally" : ""}
+            </p>
+            <h1 className="text-2xl font-medium truncate">{spec.title || "Untitled fetch"}</h1>
+          </div>
+          <div className="flex flex-wrap gap-2 chrome">
+            <button
+              type="button"
+              className="btn"
+              aria-expanded={pasteOpen}
+              aria-controls="paste-panel"
+              onClick={() => setPasteOpen((v) => !v)}
+            >
+              Paste neofetch
+            </button>
+            <button type="button" className="btn btn-primary" onClick={publish} disabled={publishing}>
+              {publishing ? "Publishing" : loaded.id ? "Publish update" : "Publish"}
+            </button>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2 chrome">
-          <button type="button" className="btn" onClick={() => setPasteOpen((v) => !v)}>
-            Paste neofetch/fastfetch
-          </button>
           <button type="button" className="btn" onClick={() => fileInput.current?.click()}>
-            JSON import
+            Import JSON
           </button>
           <input
             ref={fileInput}
@@ -221,13 +246,14 @@ function BuilderForm({ initial }: { initial: Initial }) {
             }}
           />
           <button type="button" className="btn" onClick={exportJson}>
-            JSON export
+            Export JSON
           </button>
           <CopyButton text={specJson} label="Copy JSON" />
           <CopyButton
             text={embedText}
             label="Copy embed"
             disabled={!loaded.id}
+            title={loaded.id ? undefined : "Publish first to copy an embed URL"}
           />
           <button
             type="button"
@@ -241,10 +267,7 @@ function BuilderForm({ initial }: { initial: Initial }) {
             Copy stack
           </button>
           <button type="button" className="btn" onClick={startFresh}>
-            New
-          </button>
-          <button type="button" className="btn btn-primary" onClick={publish} disabled={publishing}>
-            {publishing ? "Publishing" : loaded.id ? "Publish update" : "Publish"}
+            New draft
           </button>
         </div>
       </header>
@@ -259,7 +282,7 @@ function BuilderForm({ initial }: { initial: Initial }) {
       ) : null}
 
       {pasteOpen ? (
-        <div className="printout p-3 flex flex-col gap-2">
+        <div id="paste-panel" className="printout p-3 flex flex-col gap-2">
           <label className="label" htmlFor="paste">
             Paste the output of neofetch or fastfetch
           </label>
@@ -287,23 +310,25 @@ function BuilderForm({ initial }: { initial: Initial }) {
             <li key={section} className="printout p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
                 <h2 className="chrome text-xs tracking-[0.12em] uppercase text-muted">
-                  <span className="text-accent mr-2">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="text-accent mr-2" aria-hidden="true">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
                   {SECTION_LABELS[section]}
                 </h2>
                 <span className="flex gap-1">
                   <ReorderButton
                     disabled={index === 0}
-                    label="Move up"
+                    label="Move section up"
                     onClick={() => update((s) => ({ ...s, sectionOrder: moveSection(s.sectionOrder, section, -1) }))}
                   >
-                    ↑
+                    up
                   </ReorderButton>
                   <ReorderButton
                     disabled={index === order.length - 1}
-                    label="Move down"
+                    label="Move section down"
                     onClick={() => update((s) => ({ ...s, sectionOrder: moveSection(s.sectionOrder, section, 1) }))}
                   >
-                    ↓
+                    down
                   </ReorderButton>
                 </span>
               </div>
@@ -334,8 +359,12 @@ function BuilderForm({ initial }: { initial: Initial }) {
               </figcaption>
             </figure>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="printout p-3 flex flex-col gap-2">
+              <label className="label" htmlFor="json-pane">
+                FetchSpec JSON
+              </label>
               <textarea
+                id="json-pane"
                 className="field min-h-[28rem] font-mono text-xs"
                 value={jsonText}
                 spellCheck={false}
@@ -385,7 +414,7 @@ function PaneButton({
   children: React.ReactNode;
 }) {
   return (
-    <button type="button" className="chip" data-active={active} onClick={onClick}>
+    <button type="button" className="chip" data-active={active} aria-pressed={active} onClick={onClick}>
       {children}
     </button>
   );

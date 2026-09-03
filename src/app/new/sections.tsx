@@ -176,9 +176,9 @@ function DesktopSection({ spec, update }: SectionProps) {
           <button
             key={k}
             type="button"
-            className="printout p-3 text-left flex flex-col gap-1 border"
+            className="kind-pick"
             data-active={kind === k}
-            style={kind === k ? { borderColor: "var(--accent)" } : undefined}
+            aria-pressed={kind === k}
             onClick={() => update((s) => chooseDesktopKind(s, k))}
           >
             <span className="flex items-center gap-2 text-sm">
@@ -226,38 +226,50 @@ function DisplayServerSection({ spec, update }: SectionProps) {
 
 function DetailSection({ spec, update }: SectionProps) {
   const kind = spec.desktop.kind;
-  const labeledField = (
-    key: "wm" | "de" | "compositor",
-    label: string,
-    placeholder: string,
-    hint: string,
-  ) => (
-    <TextField
-      key={key}
-      id={`detail-${key}`}
-      label={label}
-      value={spec[key]?.label ?? ""}
-      placeholder={placeholder}
-      hint={hint}
-      onChange={(raw) =>
-        update((s) => ({ ...s, [key]: raw.trim() ? labeledFrom(raw) : undefined }))
-      }
-    />
-  );
-  const fields = (() => {
+  const fields = ((): { id: string; label: string; placeholder: string; hint: string; value: string; apply: (raw: string) => void }[] => {
+    const setLabeled = (slot: "wm" | "de" | "compositor") => (raw: string) =>
+      update((s) => ({ ...s, [slot]: raw.trim() ? labeledFrom(raw) : undefined }));
     switch (kind) {
       case "de":
         return [
-          labeledField("wm", "WM inside the DE", "Mutter", "GNOME runs Mutter, Plasma runs KWin. Name it if you know it."),
+          {
+            id: "detail-wm",
+            label: "WM inside the DE",
+            placeholder: "Mutter",
+            hint: "GNOME runs Mutter, Plasma runs KWin. Name it if you know it.",
+            value: spec.wm?.label ?? "",
+            apply: setLabeled("wm"),
+          },
         ];
       case "wm":
         return [
-          labeledField("compositor", "Standalone compositor", "picom", "The X11 compositor drawing shadows and blur, if any."),
-          labeledField("de", "Desktop environment", "", "Only if a DE is also installed and relevant."),
+          {
+            id: "detail-compositor",
+            label: "Standalone compositor",
+            placeholder: "picom",
+            hint: "The X11 compositor drawing shadows and blur, if any.",
+            value: spec.compositor?.label ?? "",
+            apply: setLabeled("compositor"),
+          },
+          {
+            id: "detail-de",
+            label: "Desktop environment",
+            placeholder: "",
+            hint: "Only if a DE is also installed and relevant.",
+            value: spec.de?.label ?? "",
+            apply: setLabeled("de"),
+          },
         ];
       case "compositor":
         return [
-          labeledField("de", "Desktop shell on top (rare)", "", "Leave blank unless you run a DE shell over this compositor."),
+          {
+            id: "detail-de",
+            label: "Desktop shell on top (rare)",
+            placeholder: "",
+            hint: "Leave blank unless you run a DE shell over this compositor.",
+            value: spec.de?.label ?? "",
+            apply: setLabeled("de"),
+          },
         ];
       default: {
         const _never: never = kind;
@@ -265,7 +277,21 @@ function DetailSection({ spec, update }: SectionProps) {
       }
     }
   })();
-  return <div className="grid gap-3 sm:grid-cols-2">{fields}</div>;
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {fields.map((field) => (
+        <TextField
+          key={field.id}
+          id={field.id}
+          label={field.label}
+          value={field.value}
+          placeholder={field.placeholder}
+          hint={field.hint}
+          onChange={field.apply}
+        />
+      ))}
+    </div>
+  );
 }
 
 function UtilsSection({ spec, update }: SectionProps) {
@@ -325,6 +351,7 @@ function UtilsSection({ spec, update }: SectionProps) {
           className="field"
           value={custom}
           placeholder="kitty"
+          aria-label="Custom util name"
           onChange={(e) => setCustom(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -336,6 +363,7 @@ function UtilsSection({ spec, update }: SectionProps) {
         <select
           className="field w-auto"
           value={customRole}
+          aria-label="Custom util role"
           onChange={(e) => setCustomRole(UTIL_ROLES.find((r) => r === e.target.value) ?? "other")}
         >
           {UTIL_ROLES.map((r) => (
@@ -374,6 +402,7 @@ function LayersSection({ spec, update }: SectionProps) {
                   className="field"
                   value={item.label}
                   placeholder={key === "hardware" ? "GPU" : "Kernel"}
+                  aria-label={`${key} label`}
                   onChange={(e) =>
                     set({ ...item, label: e.target.value, key: item.key || slugify(e.target.value) })
                   }
@@ -382,6 +411,7 @@ function LayersSection({ spec, update }: SectionProps) {
                   className="field"
                   value={item.value ?? ""}
                   placeholder={key === "hardware" ? "RX 6700 XT" : "6.12-zen"}
+                  aria-label={`${key} value`}
                   onChange={(e) => set({ ...item, value: e.target.value })}
                 />
               </>
@@ -447,12 +477,14 @@ function DecisionsSection({ spec, update }: SectionProps) {
             className="field"
             value={item.subject}
             placeholder="Hyprland"
+            aria-label="Decision subject"
             onChange={(e) => set({ ...item, subject: e.target.value })}
           />
           <input
             className="field"
             value={item.reason}
             placeholder="Wanted per-window rounding without a full DE."
+            aria-label="Decision reason"
             onChange={(e) => set({ ...item, reason: e.target.value })}
           />
         </>
@@ -477,12 +509,14 @@ function ScreenshotsSection({ spec, update }: SectionProps) {
             type="url"
             value={item.url}
             placeholder="https://…/desktop.png"
+            aria-label="Screenshot URL"
             onChange={(e) => set({ ...item, url: e.target.value })}
           />
           <input
             className="field"
             value={item.alt ?? ""}
             placeholder="alt text"
+            aria-label="Screenshot alt text"
             onChange={(e) => set({ ...item, alt: e.target.value || undefined })}
           />
         </>
