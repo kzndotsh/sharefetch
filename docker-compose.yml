@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sharefetch
+      POSTGRES_PASSWORD: sharefetch
+      POSTGRES_DB: sharefetch
+    ports:
+      - "5433:5432"
+    volumes:
+      - sharefetch-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sharefetch"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  sharefetch-pg:

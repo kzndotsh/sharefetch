@@ -1,0 +1,272 @@
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { nanoid } from "nanoid";
+import { getDb } from "@/db";
+import { fetchChangelog, fetches, fetchUtils, tools, user } from "@/db/schema";
+import { summarizeMutation } from "@/lib/changelog";
+import type { FetchSpec } from "@/lib/fetch-spec";
+import { parseFetchSpec } from "@/lib/fetch-spec";
+
+export type ExploreFilters = {
+  q?: string;
+  desktop?: string;
+  kind?: string;
+  distro?: string;
+  colorscheme?: string;
+  util?: string;
+  displayServer?: string;
+  sort?: "latest" | "random";
+};
+
+export function denormalize(spec: FetchSpec) {
+  return {
+    title: spec.title,
+    displayName: spec.displayName,
+    handle: spec.handle,
+    visibility: spec.visibility,
+    desktopKind: spec.desktop.kind,
+    desktopSlug: spec.desktop.slug,
+    distroSlug: spec.distro?.slug ?? null,
+    colorschemeSlug: spec.colorscheme?.slug ?? null,
+    displayServer: spec.displayServer ?? null,
+  };
+}
+
+export async function upsertFetch(input: {
+  id?: string;
+  ownerId: string;
+  spec: FetchSpec;
+  previous?: FetchSpec | null;
+  replaceSectionOrder?: boolean;
+}) {
+  const db = getDb();
+  const spec = parseFetchSpec(input.spec);
+  const id = input.id ?? nanoid();
+  const fields = denormalize(spec);
+  const now = new Date();
+  const existing = input.id
+    ? (
+        await db.select().from(fetches).where(eq(fetches.id, id)).limit(1)
+      )[0]
+    : undefined;
+
+  if (existing) {
+    await db
+      .update(fetches)
+      .set({
+        spec,
+        ...fields,
+        updatedAt: now,
+        lastVerifiedAt: now,
+      })
+      .where(eq(fetches.id, id));
+    await db.delete(fetchUtils).where(eq(fetchUtils.fetchId, id));
+  } else {
+    await db.insert(fetches).values({
+      id,
+      ownerId: input.ownerId,
+      spec,
+      ...fields,
+      createdAt: now,
+      updatedAt: now,
+      lastVerifiedAt: now,
+    });
+  }
+
+  if (spec.utils.items.length) {
+    await db.insert(fetchUtils).values(
+      spec.utils.items.map((item) => ({
+        fetchId: id,
+        slug: item.slug,
+        role: item.role ?? null,
+      })),
+    );
+  }
+
+  await db.insert(fetchChangelog).values({
+    id: nanoid(),
+    fetchId: id,
+    summary: summarizeMutation(input.previous ?? existing?.spec ?? null, spec),
+    createdAt: now,
+  });
+
+  await refreshToolCounts();
+  return id;
+}
+
+export async function refreshToolCounts() {
+  const db = getDb();
+  const rows = await db
+    .select({
+      slug: fetchUtils.slug,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(fetchUtils)
+    .groupBy(fetchUtils.slug);
+  for (const row of rows) {
+    await db
+      .update(tools)
+      .set({ usageCount: row.count })
+      .where(eq(tools.slug, row.slug));
+  }
+}
+
+export async function getPublicFetch(id: string) {
+  const db = getDb();
+  const [row] = await db.select().from(fetches).where(eq(fetches.id, id)).limit(1);
+  if (!row) {
+    return null;
+  }
+  if (row.visibility === "private") {
+    return null;
+  }
+  return row;
+}
+
+export async function listExplore(filters: ExploreFilters) {
+  const db = getDb();
+  const clauses = [eq(fetches.visibility, "public")];
+  if (filters.desktop) {
+    clauses.push(eq(fetches.desktopSlug, filters.desktop));
+  }
+  if (filters.kind) {
+    clauses.push(eq(fetches.desktopKind, filters.kind));
+  }
+  if (filters.distro) {
+    clauses.push(eq(fetches.distroSlug, filters.distro));
+  }
+  if (filters.colorscheme) {
+    clauses.push(eq(fetches.colorschemeSlug, filters.colorscheme));
+  }
+  if (filters.displayServer) {
+    clauses.push(eq(fetches.displayServer, filters.displayServer));
+  }
+  if (filters.q) {
+    const q = `%${filters.q}%`;
+    clauses.push(or(ilike(fetches.title, q), ilike(fetches.handle, q))!);
+  }
+
+  let ids: string[] | null = null;
+  if (filters.util) {
+    const utilRows = await db
+      .select({ fetchId: fetchUtils.fetchId })
+      .from(fetchUtils)
+      .where(eq(fetchUtils.slug, filters.util));
+    ids = utilRows.map((r) => r.fetchId);
+    if (ids.length === 0) {
+      return [];
+    }
+  }
+
+  const where = ids ? and(...clauses, inArray(fetches.id, ids)) : and(...clauses);
+
+  const order =
+    filters.sort === "random" ? sql`random()` : desc(fetches.lastVerifiedAt);
+
+  return db
+    .select()
+    .from(fetches)
+    .where(where)
+    .orderBy(order)
+    .limit(48);
+}
+
+export async function facetCounts() {
+  const db = getDb();
+  const publicOnly = eq(fetches.visibility, "public");
+  const desktop = await db
+    .select({
+      slug: fetches.desktopSlug,
+      kind: fetches.desktopKind,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(fetches)
+    .where(publicOnly)
+    .groupBy(fetches.desktopSlug, fetches.desktopKind);
+  const distro = await db
+    .select({
+      slug: fetches.distroSlug,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(fetches)
+    .where(publicOnly)
+    .groupBy(fetches.distroSlug);
+  const colorscheme = await db
+    .select({
+      slug: fetches.colorschemeSlug,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(fetches)
+    .where(publicOnly)
+    .groupBy(fetches.colorschemeSlug);
+  const utils = await db
+    .select({
+      slug: fetchUtils.slug,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(fetchUtils)
+    .innerJoin(fetches, eq(fetches.id, fetchUtils.fetchId))
+    .where(publicOnly)
+    .groupBy(fetchUtils.slug);
+  return { desktop, distro, colorscheme, utils };
+}
+
+export async function listByHandle(handle: string) {
+  const db = getDb();
+  return db
+    .select()
+    .from(fetches)
+    .where(and(eq(fetches.handle, handle), eq(fetches.visibility, "public")))
+    .orderBy(desc(fetches.updatedAt));
+}
+
+export async function latestPublic(limit = 8) {
+  const db = getDb();
+  return db
+    .select()
+    .from(fetches)
+    .where(eq(fetches.visibility, "public"))
+    .orderBy(desc(fetches.lastVerifiedAt))
+    .limit(limit);
+}
+
+export async function changelogFor(fetchId: string) {
+  const db = getDb();
+  return db
+    .select()
+    .from(fetchChangelog)
+    .where(eq(fetchChangelog.fetchId, fetchId))
+    .orderBy(desc(fetchChangelog.createdAt));
+}
+
+export async function getUserByHandle(handle: string) {
+  const db = getDb();
+  const [row] = await db.select().from(user).where(eq(user.handle, handle)).limit(1);
+  return row;
+}
+
+export async function ensureHandleUser(handle: string, name?: string) {
+  const db = getDb();
+  const [existing] = await db
+    .select()
+    .from(user)
+    .where(eq(user.handle, handle))
+    .limit(1);
+  if (existing) {
+    return existing;
+  }
+  const id = nanoid();
+  const now = new Date();
+  const [created] = await db
+    .insert(user)
+    .values({
+      id,
+      handle,
+      name: name ?? handle,
+      email: `${id}@guest.sharefetch.local`,
+      emailVerified: false,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+  return created;
+}
