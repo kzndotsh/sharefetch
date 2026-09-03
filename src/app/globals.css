@@ -28,6 +28,16 @@ body {
   line-height: 1.55;
 }
 
+body:has([data-route="home"]) .nav-home,
+body:has([data-route="explore"]) .nav-explore,
+body:has([data-route="signin"]) .nav-signin {
+  color: var(--fg);
+}
+
+body:has([data-route="builder"]) .create-fetch-cta {
+  display: none;
+}
+
 ::selection {
   background: var(--accent);
   color: var(--bg);
@@ -70,6 +80,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  min-height: 2.5rem;
   padding: 0.45rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 0;
@@ -110,7 +121,8 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.2rem 0.55rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
   border: 1px solid var(--border);
   border-radius: 0;
   color: var(--fg);

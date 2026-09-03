@@ -43,6 +43,12 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   screenshots: "Screenshots",
 };
 
+export const CLAIM_SECTIONS: readonly SectionKey[] = ["title", "desktop", "distro"];
+
+export function isClaimSection(key: SectionKey): boolean {
+  return (CLAIM_SECTIONS as readonly string[]).includes(key);
+}
+
 function isSectionKey(value: string): value is SectionKey {
   return (SECTION_KEYS as readonly string[]).includes(value);
 }
@@ -148,10 +154,40 @@ export function publishIssues(spec: FetchSpec): string[] {
   if (result.success) {
     return [];
   }
-  return result.error.issues.map((issue) => {
+  const seen = new Set<string>();
+  const messages: string[] = [];
+  for (const issue of result.error.issues) {
     const path = issue.path.map(String).join(".") || "spec";
-    return `${path}: ${issue.message}`;
-  });
+    if (path === "displayName" && !spec.handle.trim()) {
+      continue;
+    }
+    const message = humanPublishIssue(path);
+    if (seen.has(message)) {
+      continue;
+    }
+    seen.add(message);
+    messages.push(message);
+  }
+  return messages;
+}
+
+function humanPublishIssue(path: string): string {
+  switch (path) {
+    case "title":
+      return "Add a title for the card.";
+    case "handle":
+      return "Pick a handle. This browser owns the fetch until you sign in.";
+    case "displayName":
+      return "Add a display name, or leave it blank to use your handle.";
+    case "desktop.label":
+      return "Name the desktop (Hyprland, GNOME, i3…).";
+    case "desktop.slug":
+      return "Pick a desktop from the list, or type a custom name.";
+    case "desktop.kind":
+      return "Choose window manager, desktop environment, or compositor session.";
+    default:
+      return `Fix ${path} before publishing.`;
+  }
 }
 
 const draftSpecSchema = fetchSpecSchema.extend({

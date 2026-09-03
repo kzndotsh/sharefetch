@@ -6,7 +6,7 @@ import { CopyButton } from "@/components/copy-button";
 import {
   clearDraft,
   forkSpec,
-  moveSection,
+  isClaimSection,
   normalizeSectionOrder,
   parseDraftSpec,
   prepareForPublish,
@@ -15,6 +15,7 @@ import {
   SECTION_LABELS,
   wouldClobberSectionOrder,
   writeDraft,
+  type SectionKey,
 } from "@/lib/builder";
 import { EMBED_THEMES, type EmbedQuery } from "@/lib/embed-query";
 import { embedMarkdown } from "@/lib/embed-snippet";
@@ -198,6 +199,8 @@ function BuilderForm({
   };
 
   const order = normalizeSectionOrder(spec.sectionOrder);
+  const claimOrder = order.filter(isClaimSection);
+  const moreOrder = order.filter((section) => !isClaimSection(section));
   const embedText = loaded.id
     ? embedMarkdown(window.location.origin, loaded.id, previewQuery(spec).theme, new Date())
     : "";
@@ -228,48 +231,55 @@ function BuilderForm({
             </button>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 chrome">
-          <button type="button" className="btn" onClick={() => fileInput.current?.click()}>
-            Import JSON
-          </button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                importJsonFile(file);
-              }
-              e.target.value = "";
-            }}
-          />
-          <button type="button" className="btn" onClick={exportJson}>
-            Export JSON
-          </button>
-          <CopyButton text={specJson} label="Copy JSON" />
-          <CopyButton
-            text={embedText}
-            label="Copy embed"
-            disabled={!loaded.id}
-            title={loaded.id ? undefined : "Publish first to copy an embed URL"}
-          />
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              setLoaded({ spec: forkSpec(spec) });
-              setJsonDraft(null);
-              setStatus({ tone: "info", text: "Forked. Set a new handle and publish as your own." });
-            }}
-          >
-            Copy stack
-          </button>
-          <button type="button" className="btn" onClick={startFresh}>
-            New draft
-          </button>
-        </div>
+        <p className="chrome text-xs text-muted max-w-prose">
+          Title, handle, and a named desktop are enough to publish. This browser
+          cookie owns the fetch until you sign in.
+        </p>
+        <details className="chrome text-sm">
+          <summary className="cursor-pointer text-muted">Import, export, copy</summary>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <button type="button" className="btn" onClick={() => fileInput.current?.click()}>
+              Import JSON
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  importJsonFile(file);
+                }
+                e.target.value = "";
+              }}
+            />
+            <button type="button" className="btn" onClick={exportJson}>
+              Export JSON
+            </button>
+            <CopyButton text={specJson} label="Copy JSON" />
+            <CopyButton
+              text={embedText}
+              label="Copy embed"
+              disabled={!loaded.id}
+              title={loaded.id ? undefined : "Publish first to copy an embed URL"}
+            />
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setLoaded({ spec: forkSpec(spec) });
+                setJsonDraft(null);
+                setStatus({ tone: "info", text: "Forked. Set a new handle and publish as your own." });
+              }}
+            >
+              Copy stack
+            </button>
+            <button type="button" className="btn" onClick={startFresh}>
+              New draft
+            </button>
+          </div>
+        </details>
       </header>
 
       {status ? (
@@ -284,8 +294,11 @@ function BuilderForm({
       {pasteOpen ? (
         <div id="paste-panel" className="printout p-3 flex flex-col gap-2">
           <label className="label" htmlFor="paste">
-            Paste the output of neofetch or fastfetch
+            Paste neofetch or fastfetch output
           </label>
+          <p className="text-xs text-muted">
+            Fills distro, desktop, and utils. Edit anything it gets wrong.
+          </p>
           <textarea
             id="paste"
             className="field min-h-40 font-mono text-xs"
@@ -304,40 +317,8 @@ function BuilderForm({
         </div>
       ) : null}
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_minmax(0,34rem)] items-start">
-        <ol className="flex flex-col gap-6 min-w-0">
-          {order.map((section, index) => (
-            <li key={section} className="printout p-4 flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
-                <h2 className="chrome text-xs tracking-[0.12em] uppercase text-muted">
-                  <span className="text-accent mr-2" aria-hidden="true">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  {SECTION_LABELS[section]}
-                </h2>
-                <span className="flex gap-1">
-                  <ReorderButton
-                    disabled={index === 0}
-                    label="Move section up"
-                    onClick={() => update((s) => ({ ...s, sectionOrder: moveSection(s.sectionOrder, section, -1) }))}
-                  >
-                    up
-                  </ReorderButton>
-                  <ReorderButton
-                    disabled={index === order.length - 1}
-                    label="Move section down"
-                    onClick={() => update((s) => ({ ...s, sectionOrder: moveSection(s.sectionOrder, section, 1) }))}
-                  >
-                    down
-                  </ReorderButton>
-                </span>
-              </div>
-              <SectionBody section={section} spec={spec} update={update} />
-            </li>
-          ))}
-        </ol>
-
-        <aside className="lg:sticky lg:top-6 flex flex-col gap-3">
+      <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_minmax(0,34rem)] lg:items-start">
+        <aside className="order-first lg:order-none lg:sticky lg:top-6 flex flex-col gap-3">
           <div className="flex items-center justify-between chrome text-xs">
             <span className="text-muted tracking-[0.12em] uppercase">live card</span>
             <span className="flex gap-1">
@@ -381,8 +362,106 @@ function BuilderForm({
             </div>
           )}
         </aside>
+
+        <div className="flex flex-col gap-6 min-w-0">
+          <ol className="flex flex-col gap-6">
+            {claimOrder.map((section, index) => (
+              <SectionCard
+                key={section}
+                section={section}
+                index={index}
+                spec={spec}
+                update={update}
+              />
+            ))}
+          </ol>
+          <details>
+            <summary className="chrome text-xs tracking-[0.12em] uppercase text-muted cursor-pointer">
+              More on this stack
+            </summary>
+            <p className="text-xs text-muted mt-2 mb-4">
+              Colorscheme, utils, layers, visibility, and the rest. Optional for a first publish.
+            </p>
+            <ol className="flex flex-col gap-6">
+              {moreOrder.map((section, index) => (
+                <SectionCard
+                  key={section}
+                  section={section}
+                  index={claimOrder.length + index}
+                  spec={spec}
+                  update={update}
+                  reorder={{
+                    up: index > 0,
+                    down: index < moreOrder.length - 1,
+                    onMove: (delta) => {
+                      const target = moreOrder[index + delta];
+                      if (!target) {
+                        return;
+                      }
+                      update((s) => {
+                        const full = normalizeSectionOrder(s.sectionOrder);
+                        const a = full.indexOf(section);
+                        const b = full.indexOf(target);
+                        const next = [...full];
+                        next[a] = target;
+                        next[b] = section;
+                        return { ...s, sectionOrder: next };
+                      });
+                    },
+                  }}
+                />
+              ))}
+            </ol>
+          </details>
+        </div>
       </div>
     </div>
+  );
+}
+
+function SectionCard({
+  section,
+  index,
+  spec,
+  update,
+  reorder,
+}: {
+  section: SectionKey;
+  index: number;
+  spec: FetchSpec;
+  update: Update;
+  reorder?: { up: boolean; down: boolean; onMove: (delta: -1 | 1) => void };
+}) {
+  return (
+    <li className="printout p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
+        <h2 className="chrome text-xs tracking-[0.12em] uppercase text-muted">
+          <span className="text-accent mr-2" aria-hidden="true">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          {SECTION_LABELS[section]}
+        </h2>
+        {reorder ? (
+          <span className="flex gap-1">
+            <ReorderButton
+              disabled={!reorder.up}
+              label="Move section up"
+              onClick={() => reorder.onMove(-1)}
+            >
+              up
+            </ReorderButton>
+            <ReorderButton
+              disabled={!reorder.down}
+              label="Move section down"
+              onClick={() => reorder.onMove(1)}
+            >
+              down
+            </ReorderButton>
+          </span>
+        ) : null}
+      </div>
+      <SectionBody section={section} spec={spec} update={update} />
+    </li>
   );
 }
 

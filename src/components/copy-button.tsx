@@ -34,8 +34,12 @@ export function CopyButton({
       disabled={disabled}
       title={title}
       onClick={async () => {
-        await navigator.clipboard.writeText(text);
-        setCopied(true);
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+        } catch {
+          setCopied(false);
+        }
       }}
     >
       {copied ? "copied" : label}

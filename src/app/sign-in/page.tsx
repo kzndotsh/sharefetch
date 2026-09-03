@@ -40,9 +40,8 @@ export default async function SignInPage() {
             <GithubButton />
           ) : (
             <p className="text-xs text-muted border border-border p-3">
-              GitHub sign-in is off on this instance. Set{" "}
-              <code>GITHUB_CLIENT_ID</code> and <code>GITHUB_CLIENT_SECRET</code>{" "}
-              to enable it.
+              GitHub sign-in is not configured on this instance. You can still
+              publish as a guest from the builder.
             </p>
           )}
           <Link href="/new" className="text-xs text-muted hover:text-fg underline">

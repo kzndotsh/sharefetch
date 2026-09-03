@@ -27,11 +27,27 @@ import {
   type LayerItem,
   type LayerKey,
   type UtilRole,
+  type Visibility,
 } from "@/lib/fetch-spec";
 import { labeledFrom, slugify } from "@/lib/slug";
 import { ChipButton, LabeledPicker, RowList, TextField } from "./fields";
 
 export type Update = (fn: (spec: FetchSpec) => FetchSpec) => void;
+
+function visibilityHelp(value: Visibility): string {
+  switch (value) {
+    case "public":
+      return "Listed on Explore. Anyone with the URL can view it.";
+    case "unlisted":
+      return "Not listed on Explore. Anyone with the URL can view it.";
+    case "private":
+      return "Only this browser (or a signed-in owner) can open it.";
+    default: {
+      const _never: never = value;
+      return _never;
+    }
+  }
+}
 
 type SectionProps = { spec: FetchSpec; update: Update };
 
@@ -95,16 +111,20 @@ export function SectionBody({ section, spec, update }: SectionProps & { section:
       return <DecisionsSection spec={spec} update={update} />;
     case "visibility":
       return (
-        <div className="flex flex-wrap gap-1.5">
-          {VISIBILITIES.map((v) => (
-            <ChipButton
-              key={v}
-              active={spec.visibility === v}
-              onClick={() => update((s) => ({ ...s, visibility: v }))}
-            >
-              {v}
-            </ChipButton>
-          ))}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-1.5">
+            {VISIBILITIES.map((v) => (
+              <ChipButton
+                key={v}
+                active={spec.visibility === v}
+                title={visibilityHelp(v)}
+                onClick={() => update((s) => ({ ...s, visibility: v }))}
+              >
+                {v}
+              </ChipButton>
+            ))}
+          </div>
+          <p className="text-xs text-muted">{visibilityHelp(spec.visibility)}</p>
         </div>
       );
     case "dotfilesUrl":
@@ -144,7 +164,7 @@ function TitleSection({ spec, update }: SectionProps) {
         label="Handle"
         value={spec.handle}
         placeholder="moth"
-        hint="Your @name on the card. No login needed; a guest cookie keeps ownership."
+        hint="Your @name on the card. This browser cookie owns the fetch until you sign in."
         onChange={(raw) => update((s) => ({ ...s, handle: slugify(raw) }))}
       />
       <TextField

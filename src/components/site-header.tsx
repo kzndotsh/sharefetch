@@ -9,13 +9,16 @@ export function SiteHeader() {
           sharefetch
         </Link>
         <nav className="flex items-center gap-5 text-sm">
-          <Link href="/" className="text-muted hover:text-fg">
+          <Link href="/" className="nav-link nav-home hover:text-fg text-muted">
             Home
           </Link>
-          <Link href="/explore" className="text-muted hover:text-fg">
+          <Link href="/explore" className="nav-link nav-explore hover:text-fg text-muted">
             Explore
           </Link>
-          <Link href="/new" className="btn btn-primary">
+          <Link href="/sign-in" className="nav-link nav-signin hover:text-fg text-muted">
+            Sign in
+          </Link>
+          <Link href="/new" className="btn btn-primary create-fetch-cta">
             Create fetch
           </Link>
         </nav>

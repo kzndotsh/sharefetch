@@ -9,7 +9,7 @@ export default async function Home() {
   await connection();
   const latest = await latestPublic(6);
   return (
-    <div className="flex flex-col gap-16">
+    <div data-route="home" className="flex flex-col gap-16">
       <section className="grid gap-10 lg:grid-cols-[1.1fr_1fr] items-center">
         <div className="flex flex-col gap-6">
           <p className="chrome text-xs tracking-[0.18em] uppercase text-muted">

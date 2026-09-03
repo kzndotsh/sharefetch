@@ -57,121 +57,155 @@ export default async function ExplorePage(props: PageProps<"/explore">) {
     (d) => !filters.kind || d.kind === filters.kind,
   );
 
+  function kindFacet() {
+    return (
+    <Facet title="Kind">
+      {DESKTOP_KINDS.map((kind) => {
+        const t = toggleHref(filters, "kind", kind);
+        return (
+          <ChipLink key={kind} href={t.href} active={t.active} count={kindCounts.get(kind) ?? 0}>
+            {desktopKindCue(kind)}
+            <span className="text-muted">{kindLabel(kind).toLowerCase()}</span>
+          </ChipLink>
+        );
+      })}
+    </Facet>
+    );
+  }
+
+  function extraFacets() {
+    return (
+    <>
+      <Facet title="Desktop">
+        {desktops.map((d) => {
+          const t = toggleHref(filters, "desktop", d.slug);
+          const kind = DESKTOP_KINDS.find((k) => k === d.kind);
+          return (
+            <ChipLink key={`${d.slug}-${d.kind}`} href={t.href} active={t.active} count={d.count}>
+              {lookupDesktop(d.slug)?.entry.label ?? d.slug}
+              {kind ? <span className="kind-cue">{desktopKindCue(kind)}</span> : null}
+            </ChipLink>
+          );
+        })}
+      </Facet>
+      <Facet title="Display server">
+        {DISPLAY_SERVERS.map((server) => {
+          const t = toggleHref(filters, "displayServer", server);
+          return (
+            <ChipLink key={server} href={t.href} active={t.active}>
+              {server}
+            </ChipLink>
+          );
+        })}
+      </Facet>
+      <Facet title="Distro">
+        {sorted(facets.distro).map((d) => {
+          const t = toggleHref(filters, "distro", d.slug);
+          return (
+            <ChipLink key={d.slug} href={t.href} active={t.active} count={d.count}>
+              {findDistro(d.slug)?.label ?? d.slug}
+            </ChipLink>
+          );
+        })}
+      </Facet>
+      <Facet title="Colorscheme">
+        {sorted(facets.colorscheme).map((c) => {
+          const t = toggleHref(filters, "colorscheme", c.slug);
+          return (
+            <ChipLink key={c.slug} href={t.href} active={t.active} count={c.count}>
+              {findColorscheme(c.slug)?.label ?? c.slug}
+            </ChipLink>
+          );
+        })}
+      </Facet>
+      <Facet title="Utils">
+        {sorted(facets.utils).map((u) => {
+          const t = toggleHref(filters, "util", u.slug);
+          return (
+            <ChipLink key={u.slug} href={t.href} active={t.active} count={u.count}>
+              {findUtil(u.slug)?.label ?? u.slug}
+            </ChipLink>
+          );
+        })}
+      </Facet>
+    </>
+    );
+  }
+
+  const searchForm = (
+    <form action="/explore" className="flex flex-col gap-2">
+      {Object.entries(filters).map(([key, value]) =>
+        key !== "q" && value && !(key === "sort" && value === "latest") ? (
+          <input key={key} type="hidden" name={key} value={value} />
+        ) : null,
+      )}
+      <label className="label" htmlFor="q">
+        Search title or handle
+      </label>
+      <div className="flex gap-2">
+        <input
+          id="q"
+          name="q"
+          className="field"
+          defaultValue={filters.q ?? ""}
+          placeholder="hyprland, moth, minimal"
+        />
+        <button type="submit" className="btn shrink-0">
+          Search
+        </button>
+      </div>
+    </form>
+  );
+
+  const results = (
+    <section className="flex flex-col gap-4 min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+      <div className="flex items-center justify-between gap-4 rule pt-4 chrome text-xs">
+        <span className="text-muted">
+          {rows.length} public {rows.length === 1 ? "fetch" : "fetches"}
+          {hasActiveFilter(filters) ? (
+            <>
+              {" · "}
+              <a href="/explore" className="hover:text-fg underline">
+                clear filters
+              </a>
+            </>
+          ) : null}
+        </span>
+        <span className="flex gap-2">
+          <ChipLink href={exploreHref(filters, { sort: "latest" })} active={filters.sort !== "random"}>
+            latest
+          </ChipLink>
+          <ChipLink href={exploreHref(filters, { sort: "random" })} active={filters.sort === "random"}>
+            random
+          </ChipLink>
+        </span>
+      </div>
+      <FetchGrid
+        rows={rows}
+        empty={
+          hasActiveFilter(filters)
+            ? "No fetches match these filters."
+            : "Nothing published yet."
+        }
+      />
+    </section>
+  );
+
   return (
-    <div className="grid gap-8 lg:grid-cols-[16rem_1fr]">
-      <aside className="flex flex-col gap-6 text-sm">
-        <form action="/explore" className="flex flex-col gap-2">
-          {Object.entries(filters).map(([key, value]) =>
-            key !== "q" && value && !(key === "sort" && value === "latest") ? (
-              <input key={key} type="hidden" name={key} value={value} />
-            ) : null,
-          )}
-          <label className="label" htmlFor="q">
-            Search title or handle
-          </label>
-          <input
-            id="q"
-            name="q"
-            className="field"
-            defaultValue={filters.q ?? ""}
-            placeholder="hyprland, moth, minimal"
-          />
-        </form>
-
-        <Facet title="Kind">
-          {DESKTOP_KINDS.map((kind) => {
-            const t = toggleHref(filters, "kind", kind);
-            return (
-              <ChipLink key={kind} href={t.href} active={t.active} count={kindCounts.get(kind) ?? 0}>
-                {desktopKindCue(kind)}
-                <span className="text-muted">{kindLabel(kind).toLowerCase()}</span>
-              </ChipLink>
-            );
-          })}
-        </Facet>
-
-        <Facet title="Desktop">
-          {desktops.map((d) => {
-            const t = toggleHref(filters, "desktop", d.slug);
-            const kind = DESKTOP_KINDS.find((k) => k === d.kind);
-            return (
-              <ChipLink key={`${d.slug}-${d.kind}`} href={t.href} active={t.active} count={d.count}>
-                {lookupDesktop(d.slug)?.entry.label ?? d.slug}
-                {kind ? <span className="kind-cue">{desktopKindCue(kind)}</span> : null}
-              </ChipLink>
-            );
-          })}
-        </Facet>
-
-        <Facet title="Display server">
-          {DISPLAY_SERVERS.map((server) => {
-            const t = toggleHref(filters, "displayServer", server);
-            return (
-              <ChipLink key={server} href={t.href} active={t.active}>
-                {server}
-              </ChipLink>
-            );
-          })}
-        </Facet>
-
-        <Facet title="Distro">
-          {sorted(facets.distro).map((d) => {
-            const t = toggleHref(filters, "distro", d.slug);
-            return (
-              <ChipLink key={d.slug} href={t.href} active={t.active} count={d.count}>
-                {findDistro(d.slug)?.label ?? d.slug}
-              </ChipLink>
-            );
-          })}
-        </Facet>
-
-        <Facet title="Colorscheme">
-          {sorted(facets.colorscheme).map((c) => {
-            const t = toggleHref(filters, "colorscheme", c.slug);
-            return (
-              <ChipLink key={c.slug} href={t.href} active={t.active} count={c.count}>
-                {findColorscheme(c.slug)?.label ?? c.slug}
-              </ChipLink>
-            );
-          })}
-        </Facet>
-
-        <Facet title="Utils">
-          {sorted(facets.utils).map((u) => {
-            const t = toggleHref(filters, "util", u.slug);
-            return (
-              <ChipLink key={u.slug} href={t.href} active={t.active} count={u.count}>
-                {findUtil(u.slug)?.label ?? u.slug}
-              </ChipLink>
-            );
-          })}
-        </Facet>
+    <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[16rem_1fr] lg:items-start">
+      <div className="flex flex-col gap-6 lg:col-start-1 lg:row-start-1">{searchForm}</div>
+      <div className="lg:hidden">{kindFacet()}</div>
+      {results}
+      <details className="lg:hidden">
+        <summary className="chrome text-xs tracking-[0.12em] uppercase text-muted cursor-pointer">
+          More filters
+        </summary>
+        <div className="flex flex-col gap-6 text-sm pt-4">{extraFacets()}</div>
+      </details>
+      <aside className="hidden lg:flex flex-col gap-6 text-sm lg:col-start-1 lg:row-start-2">
+        {kindFacet()}
+        {extraFacets()}
       </aside>
-
-      <section className="flex flex-col gap-4 min-w-0">
-        <div className="flex items-center justify-between gap-4 rule pt-4 chrome text-xs">
-          <span className="text-muted">
-            {rows.length} public {rows.length === 1 ? "fetch" : "fetches"}
-            {hasActiveFilter(filters) ? (
-              <>
-                {" · "}
-                <a href="/explore" className="hover:text-fg underline">
-                  clear filters
-                </a>
-              </>
-            ) : null}
-          </span>
-          <span className="flex gap-2">
-            <ChipLink href={exploreHref(filters, { sort: "latest" })} active={filters.sort !== "random"}>
-              latest
-            </ChipLink>
-            <ChipLink href={exploreHref(filters, { sort: "random" })} active={filters.sort === "random"}>
-              random
-            </ChipLink>
-          </span>
-        </div>
-        <FetchGrid rows={rows} empty="No fetches match these filters." />
-      </section>
     </div>
   );
 }

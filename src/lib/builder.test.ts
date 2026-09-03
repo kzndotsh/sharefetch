@@ -79,10 +79,12 @@ describe("utils and publish", () => {
     expect(toggleUtil(on, kitty).utils.items).toEqual([]);
   });
 
-  it("reports missing required fields as paths", () => {
+  it("reports missing required fields in plain language", () => {
     const issues = publishIssues(emptyFetchSpec());
-    expect(issues.some((i) => i.startsWith("title:"))).toBe(true);
-    expect(issues.some((i) => i.startsWith("desktop.slug:"))).toBe(true);
+    expect(issues.some((i) => i.includes("title"))).toBe(true);
+    expect(issues.some((i) => i.includes("desktop"))).toBe(true);
+    expect(issues.some((i) => i.includes("display name"))).toBe(false);
+    expect(issues.every((i) => !i.includes(":"))).toBe(true);
   });
 
   it("defaults displayName to handle and drops empty dotfiles url", () => {
