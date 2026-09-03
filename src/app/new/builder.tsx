@@ -234,6 +234,7 @@ function BuilderForm({ initial }: { initial: Initial }) {
             className="btn"
             onClick={() => {
               setLoaded({ spec: forkSpec(spec) });
+              setJsonDraft(null);
               setStatus({ tone: "info", text: "Forked. Set a new handle and publish as your own." });
             }}
           >

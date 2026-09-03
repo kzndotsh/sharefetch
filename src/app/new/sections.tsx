@@ -50,7 +50,12 @@ const KIND_HELP: Record<DesktopKind, { title: string; body: string }> = {
   },
 };
 
-const COLOR_FIELDS = ["background", "foreground", "accent", "muted"] as const;
+const COLOR_FIELDS = [
+  { key: "background", placeholder: "#1e1e2e" },
+  { key: "foreground", placeholder: "#cdd6f4" },
+  { key: "accent", placeholder: "#cba6f7" },
+  { key: "muted", placeholder: "#6c7086" },
+] as const;
 
 export function SectionBody({ section, spec, update }: SectionProps & { section: SectionKey }) {
   switch (section) {
@@ -228,6 +233,7 @@ function DetailSection({ spec, update }: SectionProps) {
     hint: string,
   ) => (
     <TextField
+      key={key}
       id={`detail-${key}`}
       label={label}
       value={spec[key]?.label ?? ""}
@@ -238,22 +244,28 @@ function DetailSection({ spec, update }: SectionProps) {
       }
     />
   );
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {kind === "de"
-        ? labeledField("wm", "WM inside the DE", "Mutter", "GNOME runs Mutter, Plasma runs KWin. Name it if you know it.")
-        : null}
-      {kind === "wm"
-        ? labeledField("compositor", "Standalone compositor", "picom", "The X11 compositor drawing shadows and blur, if any.")
-        : null}
-      {kind === "compositor"
-        ? labeledField("de", "Desktop shell on top (rare)", "", "Leave blank unless you run a DE shell over this compositor.")
-        : null}
-      {kind !== "de"
-        ? labeledField("de", "Desktop environment", "", "Only if a DE is also installed and relevant.")
-        : null}
-    </div>
-  );
+  const fields = (() => {
+    switch (kind) {
+      case "de":
+        return [
+          labeledField("wm", "WM inside the DE", "Mutter", "GNOME runs Mutter, Plasma runs KWin. Name it if you know it."),
+        ];
+      case "wm":
+        return [
+          labeledField("compositor", "Standalone compositor", "picom", "The X11 compositor drawing shadows and blur, if any."),
+          labeledField("de", "Desktop environment", "", "Only if a DE is also installed and relevant."),
+        ];
+      case "compositor":
+        return [
+          labeledField("de", "Desktop shell on top (rare)", "", "Leave blank unless you run a DE shell over this compositor."),
+        ];
+      default: {
+        const _never: never = kind;
+        return _never;
+      }
+    }
+  })();
+  return <div className="grid gap-3 sm:grid-cols-2">{fields}</div>;
 }
 
 function UtilsSection({ spec, update }: SectionProps) {
@@ -401,15 +413,15 @@ function ColorsSection({ spec, update }: SectionProps) {
       <div className="grid gap-3 sm:grid-cols-2">
         {COLOR_FIELDS.map((field) => (
           <TextField
-            key={field}
-            id={`color-${field}`}
-            label={field}
-            value={spec.colors?.[field] ?? ""}
-            placeholder="#1e1e2e"
+            key={field.key}
+            id={`color-${field.key}`}
+            label={field.key}
+            value={spec.colors?.[field.key] ?? ""}
+            placeholder={field.placeholder}
             onChange={(raw) =>
               update((s) => ({
                 ...s,
-                colors: { ...s.colors, [field]: raw || undefined },
+                colors: { ...s.colors, [field.key]: raw || undefined },
               }))
             }
           />
