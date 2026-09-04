@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { pasteIntoSpec, publishFetch } from "@/app/actions";
+import { pasteIntoSpec, publishFetch } from "@/app/actions/publish";
 import { CopyButton } from "@/components/copy-button";
 import { useClipboardFlash } from "@/components/use-clipboard-flash";
 import {
@@ -168,8 +168,6 @@ export function Builder({
   const [pane, setPane] = useState<Pane>("preview");
   const [mobileTab, setMobileTab] = useState<MobileTab>("build");
   const [shareView, setShareView] = useState<ShareView>("link");
-  const [shareOpen, setShareOpen] = useState(false);
-  const [canNativeShare, setCanNativeShare] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [jsonDraft, setJsonDraft] = useState<string | null>(null);
@@ -178,7 +176,6 @@ export function Builder({
   const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionKey>("title");
   const fileInput = useRef<HTMLInputElement>(null);
-  const shareDialog = useRef<HTMLDialogElement>(null);
   const { copied: shareCopied, copy: copyShare } = useClipboardFlash();
 
   useLayoutEffect(() => {
@@ -187,24 +184,6 @@ export function Builder({
     setStatus(initial.status);
     setDraftReady(true);
   }, [editId, existing]);
-
-  useEffect(() => {
-    setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
-  }, []);
-
-  useEffect(() => {
-    const dialog = shareDialog.current;
-    if (!dialog) {
-      return;
-    }
-    if (shareOpen) {
-      if (!dialog.open) {
-        dialog.showModal();
-      }
-    } else if (dialog.open) {
-      dialog.close();
-    }
-  }, [shareOpen]);
 
   useEffect(() => {
     if (!draftReady) {
@@ -250,8 +229,6 @@ export function Builder({
     loaded.id && draftReady
       ? embedMarkdown(window.location.origin, loaded.id, previewQuery(spec).theme, new Date())
       : "";
-  const fetchPageUrl =
-    loaded.id && draftReady ? `${window.location.origin}/f/${loaded.id}` : "";
 
   const applyCompatResult = (
     result: { spec: FetchSpec; notes: CompatNote[] },
@@ -385,23 +362,6 @@ export function Builder({
     applyCompatResult(result, preset ? `Applied ${preset.label}.` : "Applied preset.");
   };
 
-  const nativeShare = async () => {
-    if (!canNativeShare) {
-      return;
-    }
-    try {
-      await navigator.share({
-        title: spec.title.trim() || "Sharefetch draft",
-        url: shareAbsolute,
-      });
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        return;
-      }
-      setStatus({ tone: "error", text: "Could not open the system share sheet." });
-    }
-  };
-
   const order = normalizeSectionOrder(spec.sectionOrder);
   const activeIndex = Math.max(0, order.indexOf(activeSection));
   const inspectSection = order.includes(activeSection)
@@ -499,30 +459,24 @@ export function Builder({
               </PaneButton>
             </span>
           </div>
-          <button
-            type="button"
-            className="text-left rounded-[var(--radius)] border border-border px-2.5 py-2 hover:border-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            aria-label="Copy share builder link"
-            title="Click to copy"
-            onClick={() => {
-              void copyShare(shareCopyText);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
+          <div className="flex items-start gap-2 rounded-[var(--radius)] border border-border px-2.5 py-2">
+            <code className="min-w-0 flex-1 text-xs text-muted break-all pt-0.5">
+              {shareDisplay}
+            </code>
+            <button
+              type="button"
+              className="shrink-0 p-1 text-muted hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded-[var(--radius)]"
+              aria-label={shareCopied ? "Copied" : "Copy share builder link"}
+              title={shareCopied ? "Copied" : "Copy"}
+              onClick={() => {
                 void copyShare(shareCopyText);
-              }
-            }}
-          >
-            <code className="text-xs text-muted break-all">{shareDisplay}</code>
-            <span className="chrome block text-[10px] tracking-[0.12em] uppercase text-muted pt-1">
-              {shareCopied ? "copied" : "tap to copy"}
-            </span>
-          </button>
-          <div className="flex flex-wrap gap-2">
-            <CopyButton text={shareCopyText} label="Copy builder link" />
-            <button type="button" className="btn" onClick={() => setShareOpen(true)}>
-              Share
+              }}
+            >
+              {shareCopied ? (
+                <CheckIcon className="size-4" />
+              ) : (
+                <ClipboardIcon className="size-4" />
+              )}
             </button>
           </div>
         </div>
@@ -548,43 +502,6 @@ export function Builder({
           )}
         </div>
       </div>
-
-      <dialog
-        ref={shareDialog}
-        className="printout m-auto max-w-md w-[calc(100%-2rem)] p-4 bg-bg text-fg border border-border open:flex open:flex-col open:gap-3 backdrop:bg-bg/80"
-        onClose={() => setShareOpen(false)}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <p className="chrome text-xs tracking-[0.12em] uppercase text-muted">Share</p>
-          <button type="button" className="btn" onClick={() => setShareOpen(false)}>
-            Close
-          </button>
-        </div>
-        <p className="text-sm">{spec.title.trim() || "Untitled fetch"}</p>
-        <code className="text-xs text-muted break-all">{shareAbsolute}</code>
-        <div className="flex flex-wrap gap-2">
-          <CopyButton text={shareAbsolute} label="Copy URL" />
-          <CopyButton text={shareMarkdown} label="Copy markdown" />
-          {canNativeShare ? (
-            <button type="button" className="btn" onClick={() => void nativeShare()}>
-              System share
-            </button>
-          ) : null}
-        </div>
-        {loaded.id ? (
-          <div className="border-t border-border pt-3 flex flex-col gap-2">
-            <p className="chrome text-xs tracking-[0.12em] uppercase text-muted">
-              Published
-            </p>
-            <CopyButton text={fetchPageUrl} label="Copy fetch page" />
-            <CopyButton text={embedText} label="Copy embed" />
-          </div>
-        ) : (
-          <p className="text-xs text-muted">
-            Publish to add the fetch page and embed links here.
-          </p>
-        )}
-      </dialog>
     </aside>
   );
 
@@ -959,5 +876,40 @@ function PaneButton({
     >
       {children}
     </button>
+  );
+}
+
+function ClipboardIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 13l4 4L19 7" />
+    </svg>
   );
 }
