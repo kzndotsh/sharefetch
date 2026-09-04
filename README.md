@@ -1,12 +1,20 @@
 # Sharefetch
 
-Typed system/fetch profiles. Embeddable SVG cards. Explore by desktop, distro, colorscheme, and utils.
+Publish a desktop stack as a typed **fetch**, share it as an SVG, and browse others by real facets — not screenshots.
 
-GNOME is a DE. Hyprland is a compositor. i3 is a WM. Those are not the same facet.
+A fetch is a `FetchSpec`: desktop (WM / DE / compositor), layout, distro, theme, utils, optional layers. Explore ranks public fetches; upvotes are one per actor. Embeds are live SVG URLs you can drop in a README.
 
-## Run
+**WM ≠ DE ≠ compositor.** GNOME is a DE. i3 is a WM. Hyprland is a compositor. Those are separate kinds on `desktop.kind`.
 
-Postgres is required. `docker compose` binds **5433** so it does not fight a local 5432.
+## Stack
+
+- Next.js (App Router) + React
+- Postgres + Drizzle
+- Better Auth (optional GitHub OAuth; guests can publish)
+
+## Setup
+
+Postgres is required. Compose binds **5433** so it does not collide with a local 5432.
 
 ```bash
 cp .env.example .env
@@ -18,16 +26,20 @@ pnpm test
 pnpm dev
 ```
 
-If you already have Postgres on 5432, point `DATABASE_URL` at a `sharefetch` database and skip Compose.
+App: http://localhost:3000
 
-Open http://localhost:3000
+If you already run Postgres, set `DATABASE_URL` to a `sharefetch` database and skip Compose.
 
-## Scripts
+## Routes
 
-- `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:push`
-- `pnpm db:seed` — 20 fetches covering WM, DE, and compositor
-- `pnpm docs:svg` — sample cards in `docs/`
-- `pnpm docs:schema` — `docs/schema.json`
+| Path | |
+| --- | --- |
+| `/` | Home |
+| `/new` | Builder (live SVG + stack editor) |
+| `/explore` | Public board (popular / latest / random, filters, votes) |
+| `/f/[id]` | Fetch page + embed snippet |
+| `/u/[handle]` | Profile |
+| `/embed/[id].svg` | Embeddable card |
 
 ## Embed
 
@@ -35,20 +47,33 @@ Open http://localhost:3000
 ![fetch](http://localhost:3000/embed/<id>.svg?theme=dark&v=<updatedAt>)
 ```
 
-Query params: `theme` (`default`, `dark`, `light`, `tokyonight`, `gruvbox`, `nord`, `catppuccin`), `hide=distro,utils`, `show_icons=true`, `layout=compact|full`.
+| Param | |
+| --- | --- |
+| `theme` | `default`, `dark`, `light`, `tokyonight`, `gruvbox`, `nord`, `catppuccin` |
+| `hide` | comma list, e.g. `distro,utils` |
+| `show_icons` | `true` |
+| `layout` | `compact` \| `full` |
+| `v` | cache buster — use `updatedAt` from **Re-verify** |
 
-Cache headers are short (`max-age=600`). Shared free hosts die. Self-host the app if the card is load-bearing in a README.
+Cache is short (`max-age=600`). Self-host if the image matters in a README.
 
-Bump `?v=` by clicking **Re-verify** on the fetch page (`updatedAt` / `lastVerifiedAt`).
+## Scripts
 
-## Add a catalog synonym
-
-Edit `SYNONYMS` in `src/lib/slug.ts`. Keys are lowercase. Values are canonical slugs (`arch` → `arch-linux`).
-
-## Add an embed theme
-
-Add an id to `EMBED_THEMES` and a palette in `THEME_MAP` in `src/lib/embed-query.ts`.
+| | |
+| --- | --- |
+| `pnpm db:generate` / `db:migrate` / `db:push` | Schema |
+| `pnpm db:seed` | Sample public fetches |
+| `pnpm test` | Vitest |
+| `pnpm docs:schema` | Write `docs/schema.json` |
+| `pnpm docs:svg` | Sample SVGs under `docs/` |
 
 ## Auth
 
-GitHub OAuth via Better Auth is optional. Set `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`. Create and publish work without an account (guest cookie + handle).
+GitHub OAuth is optional (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`). Publishing works with a guest cookie and handle.
+
+## Extending
+
+- **Slug synonyms** — `SYNONYMS` in `src/lib/slug.ts` (`arch` → `arch-linux`)
+- **Catalogs** — desktops, distros, themes, utils in `src/lib/catalogs.ts` (see `docs/catalog.md`)
+- **Embed themes** — `EMBED_THEMES` + `THEME_MAP` in `src/lib/embed-query.ts`
+- **Spec** — Zod model in `src/lib/fetch-spec.ts`; JSON Schema via `pnpm docs:schema`
