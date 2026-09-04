@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { reverifyFetch } from "@/app/actions";
+import { reverifyFetch } from "@/app/actions/reverify";
 import { ChipLink } from "@/components/chip-link";
 import { CopyButton } from "@/components/copy-button";
 import { KindCue } from "@/components/kind-cue";
@@ -220,7 +220,7 @@ export default async function FetchPage(props: PageProps<"/f/[id]">) {
                     {spec.utils.items
                       .filter((u) => (u.role ?? "other") === group.role)
                       .map((u) => (
-                        <Link key={u.slug} href={`/tools/${u.slug}`} className="chip">
+                        <Link key={u.slug} href={`/t/${u.slug}`} className="chip">
                           {u.label}
                         </Link>
                       ))}
