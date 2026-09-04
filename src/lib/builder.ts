@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { CatalogEntry } from "./catalogs";
 import {
+  DESKTOP_COMPOSITOR,
+  DESKTOP_DE,
+  DESKTOP_WM,
+  DISTROS,
+} from "./catalogs";
+import {
   DEFAULT_SECTION_ORDER,
   DESKTOP_KINDS,
   fetchSpecSchema,
@@ -9,6 +15,11 @@ import {
   type FetchSpec,
   type UtilItem,
 } from "./fetch-spec";
+import {
+  isUtilCompatible,
+  reconcileDesktopStack,
+  type CompatResult,
+} from "./stack-compat";
 
 export const SECTION_KEYS = [
   "title",
@@ -123,10 +134,75 @@ export function hasUtil(spec: FetchSpec, slug: string): boolean {
 }
 
 export function toggleUtil(spec: FetchSpec, item: UtilItem): FetchSpec {
-  const items = hasUtil(spec, item.slug)
-    ? spec.utils.items.filter((u) => u.slug !== item.slug)
-    : [...spec.utils.items, item];
-  return { ...spec, utils: { items } };
+  if (hasUtil(spec, item.slug)) {
+    return {
+      ...spec,
+      utils: { items: spec.utils.items.filter((u) => u.slug !== item.slug) },
+    };
+  }
+  if (!isUtilCompatible(spec, item.slug)) {
+    return spec;
+  }
+  return { ...spec, utils: { items: [...spec.utils.items, item] } };
+}
+
+export function applySpecUpdate(
+  current: FetchSpec,
+  update: Partial<FetchSpec> | ((prev: FetchSpec) => FetchSpec),
+): CompatResult {
+  const next = typeof update === "function" ? update(current) : { ...current, ...update };
+  return reconcileDesktopStack(next);
+}
+
+export type BuilderPreset = {
+  id: string;
+  label: string;
+  apply: (base: FetchSpec) => FetchSpec;
+};
+
+function withDesktop(
+  base: FetchSpec,
+  kind: DesktopKind,
+  entry: CatalogEntry,
+  distro: CatalogEntry,
+): FetchSpec {
+  return {
+    ...base,
+    desktop: { kind, label: entry.label, slug: entry.slug },
+    displayServer: entry.displayServer,
+    distro: { label: distro.label, slug: distro.slug },
+  };
+}
+
+export const BUILDER_PRESETS: BuilderPreset[] = [
+  {
+    id: "niri-arch",
+    label: "Niri on Arch",
+    apply: (base) =>
+      withDesktop(base, "compositor", DESKTOP_COMPOSITOR[2], DISTROS[0]),
+  },
+  {
+    id: "gnome-fedora",
+    label: "GNOME on Fedora",
+    apply: (base) => withDesktop(base, "de", DESKTOP_DE[0], DISTROS[2]),
+  },
+  {
+    id: "i3-debian",
+    label: "i3 on Debian",
+    apply: (base) => withDesktop(base, "wm", DESKTOP_WM[0], DISTROS[3]),
+  },
+];
+
+export function applyPreset(spec: FetchSpec, presetId: string): CompatResult {
+  const preset = BUILDER_PRESETS.find((p) => p.id === presetId);
+  if (!preset) {
+    return { spec, notes: [] };
+  }
+  const titled =
+    spec.title.trim()
+      ? preset.apply(spec)
+      : { ...preset.apply(spec), title: preset.label };
+  return reconcileDesktopStack(titled);
 }
 
 export function forkSpec(spec: FetchSpec): FetchSpec {
@@ -243,4 +319,32 @@ export function writeDraft(
 
 export function clearDraft(storage: Pick<Storage, "removeItem">) {
   storage.removeItem(DRAFT_KEY);
+}
+
+export function clearClaimSlot(
+  spec: FetchSpec,
+  slot: "kind" | "desktop" | "distro" | "display",
+): FetchSpec {
+  switch (slot) {
+    case "kind":
+      return {
+        ...spec,
+        desktop: { label: "", slug: "" },
+        displayServer: undefined,
+      };
+    case "desktop":
+      return {
+        ...spec,
+        desktop: { kind: spec.desktop.kind, label: "", slug: "" },
+        displayServer: undefined,
+      };
+    case "distro":
+      return { ...spec, distro: undefined };
+    case "display":
+      return { ...spec, displayServer: undefined };
+    default: {
+      const _never: never = slot;
+      return _never;
+    }
+  }
 }

@@ -12,6 +12,7 @@ import {
 import {
   catalogForKind,
   COLORSCHEMES,
+  defaultDisplayServer,
   DISTROS,
   UTILS,
 } from "@/lib/catalogs";
@@ -30,6 +31,12 @@ import {
   type Visibility,
 } from "@/lib/fetch-spec";
 import { labeledFrom, slugify } from "@/lib/slug";
+import {
+  displayServerIncompatibilityNote,
+  isDisplayServerCompatible,
+  isUtilCompatible,
+  utilIncompatibilityNote,
+} from "@/lib/stack-compat";
 import { ChipButton, LabeledPicker, RowList, TextField } from "./fields";
 
 export type Update = (fn: (spec: FetchSpec) => FetchSpec) => void;
@@ -228,22 +235,37 @@ function DesktopSection({ spec, update }: SectionProps) {
 }
 
 function DisplayServerSection({ spec, update }: SectionProps) {
+  const catalogDefault =
+    spec.desktop.kind && spec.desktop.slug
+      ? defaultDisplayServer(spec.desktop.kind, spec.desktop.slug)
+      : undefined;
+
   return (
     <div className="flex flex-wrap gap-1.5">
-      {DISPLAY_SERVERS.map((server) => (
-        <ChipButton
-          key={server}
-          active={spec.displayServer === server}
-          onClick={() =>
-            update((s) => ({
-              ...s,
-              displayServer: s.displayServer === server ? undefined : server,
-            }))
-          }
-        >
-          {server}
-        </ChipButton>
-      ))}
+      {DISPLAY_SERVERS.map((server) => {
+        const compatible = isDisplayServerCompatible(spec, server);
+        const disabled = !compatible && spec.displayServer !== server;
+        const note = compatible ? undefined : displayServerIncompatibilityNote(server);
+        const isDefault = catalogDefault === server;
+        return (
+          <ChipButton
+            key={server}
+            active={spec.displayServer === server}
+            disabled={disabled}
+            title={note}
+            hint={note}
+            onClick={() =>
+              update((s) => ({
+                ...s,
+                displayServer: s.displayServer === server ? undefined : server,
+              }))
+            }
+          >
+            {server}
+            {isDefault ? <span className="chip-default">default</span> : null}
+          </ChipButton>
+        );
+      })}
     </div>
   );
 }
@@ -351,15 +373,28 @@ function UtilsSection({ spec, update }: SectionProps) {
           <div key={role} className="grid gap-1 sm:grid-cols-[7rem_1fr]">
             <span className="label pt-1">{role}</span>
             <div className="flex flex-wrap gap-1.5">
-              {options.map((u) => (
-                <ChipButton
-                  key={u.slug}
-                  active={hasUtil(spec, u.slug)}
-                  onClick={() => update((s) => toggleUtil(s, { label: u.label, slug: u.slug, role: u.role }))}
-                >
-                  {u.label}
-                </ChipButton>
-              ))}
+              {options.map((u) => {
+                const compatible = isUtilCompatible(spec, u.slug);
+                const active = hasUtil(spec, u.slug);
+                const disabled = !compatible && !active;
+                const note = compatible ? undefined : utilIncompatibilityNote(u.slug);
+                return (
+                  <ChipButton
+                    key={u.slug}
+                    active={active}
+                    disabled={disabled}
+                    title={note}
+                    hint={note}
+                    onClick={() =>
+                      update((s) =>
+                        toggleUtil(s, { label: u.label, slug: u.slug, role: u.role }),
+                      )
+                    }
+                  >
+                    {u.label}
+                  </ChipButton>
+                );
+              })}
             </div>
           </div>
         );

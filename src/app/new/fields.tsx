@@ -44,22 +44,30 @@ export function ChipButton({
   onClick,
   children,
   title,
+  disabled = false,
+  hint,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
   title?: string;
+  disabled?: boolean;
+  /** Shown under the label when the chip is disabled (mobile-visible). */
+  hint?: string;
 }) {
+  const showHint = Boolean(disabled && hint);
   return (
     <button
       type="button"
-      className="chip"
+      className={showHint ? "chip chip-with-hint" : "chip"}
       data-active={active}
       aria-pressed={active}
+      disabled={disabled}
       onClick={onClick}
       title={title}
     >
-      {children}
+      <span className="chip-label">{children}</span>
+      {showHint ? <span className="chip-hint">{hint}</span> : null}
     </button>
   );
 }

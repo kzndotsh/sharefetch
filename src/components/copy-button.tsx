@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-const RESET_MS = 1400;
+import { useClipboardFlash } from "@/components/use-clipboard-flash";
 
 export function CopyButton({
   text,
@@ -17,15 +15,7 @@ export function CopyButton({
   disabled?: boolean;
   title?: string;
 }) {
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) {
-      return;
-    }
-    const timer = setTimeout(() => setCopied(false), RESET_MS);
-    return () => clearTimeout(timer);
-  }, [copied]);
+  const { copied, copy } = useClipboardFlash();
 
   return (
     <button
@@ -33,13 +23,8 @@ export function CopyButton({
       className={className}
       disabled={disabled}
       title={title}
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(text);
-          setCopied(true);
-        } catch {
-          setCopied(false);
-        }
+      onClick={() => {
+        void copy(text);
       }}
     >
       {copied ? "copied" : label}
