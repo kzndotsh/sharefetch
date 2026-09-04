@@ -11,7 +11,7 @@ import { parseFetchPaste } from "@/lib/paste";
 import { ensureHandleUser, upsertFetch } from "@/db/queries";
 import { getDb } from "@/db";
 import { eq } from "drizzle-orm";
-import { fetches } from "@/db/schema";
+import { fetches, user } from "@/db/schema";
 
 async function requireOwner(handle: string): Promise<string> {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -20,7 +20,14 @@ async function requireOwner(handle: string): Promise<string> {
   }
   const existingGuest = await guestUserId();
   if (existingGuest) {
-    return existingGuest;
+    const [row] = await getDb()
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.id, existingGuest))
+      .limit(1);
+    if (row) {
+      return row.id;
+    }
   }
   const created = await ensureHandleUser(handle);
   await setGuestCookie(created.id);
