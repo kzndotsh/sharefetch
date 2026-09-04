@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toggleVote } from "@/app/votes/actions";
+import { toggleVote } from "@/app/actions/vote";
 
 export function VoteButton({
   fetchId,
