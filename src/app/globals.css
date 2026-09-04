@@ -150,6 +150,35 @@ a {
   color: var(--accent);
 }
 
+.chip-with-hint {
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 14rem;
+  min-height: auto;
+  gap: 0.2rem;
+  white-space: normal;
+}
+
+.chip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.chip-hint {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--muted);
+  text-align: left;
+}
+
+.chip-default {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .chip-count {
   color: var(--muted);
 }
