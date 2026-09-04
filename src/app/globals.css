@@ -36,10 +36,6 @@ body:has([data-route="signin"]) .nav-signin {
   color: var(--fg);
 }
 
-body:has([data-route="builder"]) .create-fetch-cta {
-  display: none;
-}
-
 body:has([data-route="builder"]) main {
   max-width: none;
   padding-left: 0;
@@ -142,6 +138,13 @@ a {
 .btn-primary:hover:not(:disabled) {
   filter: brightness(1.06);
   border-color: var(--accent);
+}
+
+.btn-compact {
+  min-height: 1.75rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .chip {

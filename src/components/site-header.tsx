@@ -18,7 +18,10 @@ export function SiteHeader() {
           <Link href="/sign-in" className="nav-link nav-signin hover:text-fg text-muted">
             Sign in
           </Link>
-          <Link href="/new" className="btn btn-primary create-fetch-cta">
+          <Link
+            href="/new"
+            className="btn btn-primary btn-compact create-fetch-cta"
+          >
             Create fetch
           </Link>
         </nav>
