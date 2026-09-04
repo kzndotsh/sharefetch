@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-border chrome">
+    <header className="sticky top-0 z-40 border-b border-border bg-bg/95 backdrop-blur-sm chrome">
       <div className="max-w-6xl mx-auto px-5 h-12 flex items-center justify-between gap-6">
         <Link href="/" className="font-mono text-sm tracking-[0.18em] uppercase">
           <span className="inline-block w-2 h-2 rounded-[2px] bg-accent mr-2 align-middle" />
@@ -14,6 +14,12 @@ export function SiteHeader() {
           </Link>
           <Link href="/explore" className="nav-link nav-explore hover:text-fg text-muted">
             Explore
+          </Link>
+          <Link href="/t" className="nav-link nav-topics hover:text-fg text-muted">
+            Topics
+          </Link>
+          <Link href="/u" className="nav-link nav-users hover:text-fg text-muted">
+            Users
           </Link>
           <Link href="/sign-in" className="nav-link nav-signin hover:text-fg text-muted">
             Sign in
