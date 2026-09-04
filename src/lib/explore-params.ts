@@ -26,7 +26,7 @@ export function parseExploreFilters(params: SearchParams): ExploreFilters {
     util: single(params.util),
     displayServer: oneOf(single(params.displayServer), DISPLAY_SERVERS),
     layout: oneOf(single(params.layout), DESKTOP_LAYOUTS),
-    sort: oneOf(single(params.sort), ["latest", "random"] as const) ?? "latest",
+    sort: oneOf(single(params.sort), ["latest", "random", "popular"] as const) ?? "popular",
   };
 }
 
@@ -37,7 +37,7 @@ export function exploreHref(
   const merged: ExploreFilters = { ...filters, ...patch };
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(merged)) {
-    if (value && !(key === "sort" && value === "latest")) {
+    if (value && !(key === "sort" && value === "popular")) {
       query.set(key, value);
     }
   }

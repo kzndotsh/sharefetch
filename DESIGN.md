@@ -1,13 +1,13 @@
 ---
 name: Sharefetch
-description: Graphite chrome around a lemon-accented fetch printout.
+description: Graphite chrome around a steel-accented fetch printout.
 colors:
-  bg: "#0e1216"
-  paper: "#161c22"
-  fg: "#d7dee5"
-  muted: "#7d8894"
-  accent: "#e6c200"
-  border: "#2c343d"
+  bg: "#0c1014"
+  paper: "#151b21"
+  fg: "#d0d7de"
+  muted: "#7e8a96"
+  accent: "#8fa3b4"
+  border: "#2a323b"
 typography:
   display:
     fontFamily: "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
@@ -55,6 +55,7 @@ typography:
     letterSpacing: "0.08em"
 rounded:
   none: "0px"
+  control: "6px"
 spacing:
   field: "8px"
   control: "12px"
@@ -66,7 +67,7 @@ components:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.fg}"
     typography: "{typography.chrome}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.control}"
     padding: "0.45rem 0.9rem"
   button-hover:
     backgroundColor: "{colors.paper}"
@@ -75,7 +76,7 @@ components:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.bg}"
     typography: "{typography.chrome}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.control}"
     padding: "0.45rem 0.9rem"
   button-primary-hover:
     backgroundColor: "{colors.accent}"
@@ -83,7 +84,7 @@ components:
   chip:
     backgroundColor: "transparent"
     textColor: "{colors.fg}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.control}"
     padding: "0.2rem 0.55rem"
   chip-active:
     backgroundColor: "transparent"
@@ -92,17 +93,17 @@ components:
     backgroundColor: "{colors.bg}"
     textColor: "{colors.fg}"
     typography: "{typography.body}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.control}"
     padding: "0.5rem 0.65rem"
   printout:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.fg}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.control}"
     padding: "16px"
   kind-cue:
     backgroundColor: "transparent"
     textColor: "{colors.muted}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.control}"
     padding: "0 0.35rem"
 ---
 
@@ -112,32 +113,32 @@ components:
 
 **Creative North Star: "The Cold Aisle"**
 
-Sharefetch looks like a listing under fluorescent machine-room light. The page is graphite (`#0e1216`); every claim about a stack sits on a slightly lifted console paper (`#161c22`) with a 1px hairline. Lemon (`#e6c200`) is not a brand wash. It is the caution lamp: the header square, the SVG corner ticks, the primary publish action, the active facet, the focus ring.
+Sharefetch looks like a listing under machine-room light. The page is graphite (`#0c1014`); every stack sits on slightly lifted console paper (`#151b21`) with a soft hairline. Steel (`#8fa3b4`) is the quiet signal: header mark, SVG ticks, primary actions, active facets, focus — not a neon wash.
 
 IBM Plex Mono is the reading voice because a fetch is typed data. IBM Plex Sans is chrome only: nav, buttons, uppercase labels, the footer. The two faces never swap roles.
 
 Embed themes (`dracula`, `gruvbox`, `nord`, and the rest) recolor the **SVG card**, never the site. Site chrome stays this graphite system so a README screenshot of the product still matches the product.
 
 **Key Characteristics:**
-- Square corners everywhere. Radius is a defect.
-- Hairline borders (`#2c343d`), not shadows as the default depth cue.
-- Lemon used as a rare signal, not a fill.
+- Soft 6px control radius — not pills, not razor squares.
+- Quiet hairline borders (`#2a323b`); depth via soft shadow on printouts only.
+- Steel used as a rare signal, not a fill.
 - Mono body, sans chrome. Uppercase tracked labels.
 - The printout (card / builder section / live preview frame) is the signature silhouette.
 
 ## Colors
 
-A cold aisle: graphite ground, slightly lighter console paper for claims, mist text, lemon as the only saturated voice.
+A cold aisle: graphite ground, slightly lighter console paper for claims, mist text, steel as the only accent voice.
 
 ### Primary
-- **Caution lamp** (`{colors.accent}`): primary buttons, active chips, focus outline, header 8px square, SVG accent ticks, builder section numbers, hover on fetch titles. Selection invert: lemon fill, graphite text.
+- **Steel** (`{colors.accent}`): primary buttons, active chips, focus outline, header mark, SVG accent ticks, builder section numbers, hover on fetch titles. Selection uses a soft steel wash.
 
 ### Neutral
 - **Graphite ground** (`{colors.bg}`): page, field interiors, the hole the printout sits in.
 - **Console paper** (`{colors.paper}`): printouts, default buttons, header/footer sit on ground not paper.
 - **Mist** (`{colors.fg}`): body and titles.
 - **Conduit** (`{colors.muted}`): labels, eyebrows, handles, verified dates, secondary links, chip counts.
-- **Steel** (`{colors.border}`): every stroke. Hover on default buttons and chips shifts the stroke to conduit, not lemon, unless the control is active.
+- **Hairline** (`{colors.border}`): every stroke. Hover on default buttons and chips shifts the stroke to conduit, not steel, unless the control is active.
 
 **The Rare Lemon Rule.** Lemon occupies a small fraction of any screen. Filling a printout, a sidebar, or a hero with accent is a different product.
 

@@ -5,7 +5,7 @@ export function SiteHeader() {
     <header className="border-b border-border chrome">
       <div className="max-w-6xl mx-auto px-5 h-12 flex items-center justify-between gap-6">
         <Link href="/" className="font-mono text-sm tracking-[0.18em] uppercase">
-          <span className="inline-block w-2 h-2 bg-accent mr-2 align-middle" />
+          <span className="inline-block w-2 h-2 rounded-[2px] bg-accent mr-2 align-middle" />
           sharefetch
         </Link>
         <nav className="flex items-center gap-5 text-sm">

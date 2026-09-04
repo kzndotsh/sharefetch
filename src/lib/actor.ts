@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
+import { nanoid } from "nanoid";
+import { ensureHandleUser } from "@/db/queries";
 import { auth } from "./auth";
-import { guestUserId } from "./guest";
+import { guestUserId, setGuestCookie } from "./guest";
 
 export async function currentActorId(): Promise<string | null> {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -8,6 +10,17 @@ export async function currentActorId(): Promise<string | null> {
     return session.user.id;
   }
   return guestUserId();
+}
+
+/** Session user, existing guest, or a newly minted anonymous voter guest. */
+export async function ensureVoterGuest(): Promise<string> {
+  const existing = await currentActorId();
+  if (existing) {
+    return existing;
+  }
+  const created = await ensureHandleUser(`v-${nanoid(8)}`);
+  await setGuestCookie(created.id);
+  return created.id;
 }
 
 export async function requestOrigin(): Promise<string> {

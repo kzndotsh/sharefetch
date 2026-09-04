@@ -15,6 +15,13 @@
       "when": 1788528600000,
       "tag": "0001_fetches_layout",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788530400000,
+      "tag": "0002_fetch_votes",
+      "breakpoints": true
     }
   ]
 }

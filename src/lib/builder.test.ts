@@ -193,6 +193,14 @@ describe("explore params", () => {
     expect(toggled.active).toBe(true);
     expect(toggled.href).toBe("/explore");
   });
+
+  it("defaults to popular and parses popular sort", () => {
+    expect(parseExploreFilters({}).sort).toBe("popular");
+    expect(parseExploreFilters({ sort: "popular" }).sort).toBe("popular");
+    expect(parseExploreFilters({ sort: "latest" }).sort).toBe("latest");
+    expect(exploreHref({ sort: "popular" }, {})).toBe("/explore");
+    expect(exploreHref({}, { sort: "latest" })).toBe("/explore?sort=latest");
+  });
 });
 
 describe("format and embed", () => {

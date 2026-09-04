@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0e1216;
-  --paper: #161c22;
-  --fg: #d7dee5;
-  --muted: #7d8894;
-  --accent: #e6c200;
-  --border: #2c343d;
+  --bg: #0c1014;
+  --paper: #151b21;
+  --fg: #d0d7de;
+  --muted: #7e8a96;
+  --accent: #8fa3b4;
+  --border: #2a323b;
+  --radius: 6px;
 }
 
 @theme inline {
@@ -16,6 +17,7 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-border: var(--border);
+  --radius-control: var(--radius);
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-sans: var(--font-plex-sans), system-ui, sans-serif;
 }
@@ -49,15 +51,25 @@ body:has([data-route="builder"]) > footer {
   display: none;
 }
 
+body:has([data-route="lab"]) main {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+}
+
 .studio-canvas {
   background-color: var(--bg);
-  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--border) 70%, transparent) 1px,
+    transparent 1px
+  );
   background-size: 14px 14px;
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--bg);
+  background: color-mix(in oklab, var(--accent) 45%, var(--paper));
+  color: var(--fg);
 }
 
 a {
@@ -75,10 +87,8 @@ a {
 .printout {
   background: var(--paper);
   border: 1px solid var(--border);
-  border-radius: 0;
-  box-shadow:
-    0 1px 0 var(--border),
-    0 12px 32px -20px rgba(0, 0, 0, 0.9);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 28px -18px rgba(0, 0, 0, 0.55);
 }
 
 .printout-row {
@@ -100,7 +110,7 @@ a {
   min-height: 2.5rem;
   padding: 0.45rem 0.9rem;
   border: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: var(--radius);
   background: var(--paper);
   color: var(--fg);
   font-family: var(--font-sans);
@@ -130,7 +140,7 @@ a {
 }
 
 .btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
+  filter: brightness(1.06);
   border-color: var(--accent);
 }
 
@@ -142,7 +152,7 @@ a {
   max-width: 100%;
   padding: 0.35rem 0.65rem;
   border: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: var(--radius);
   color: var(--fg);
   font-size: 12px;
   line-height: 1.4;
@@ -164,7 +174,43 @@ a {
 }
 
 .chip[data-active="true"] {
-  border-color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 65%, var(--border));
+  color: var(--accent);
+}
+
+.topic-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 0;
+  max-width: 100%;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid color-mix(in oklab, var(--border) 45%, transparent);
+  border-radius: calc(var(--radius) - 2px);
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  background: transparent;
+  transition:
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.topic-chip:hover {
+  border-color: var(--muted);
+  color: var(--fg);
+}
+
+.topic-chip[data-active="true"] {
+  border-color: color-mix(in oklab, var(--accent) 50%, var(--border));
+  color: var(--accent);
+}
+
+button.vote-btn[data-active="true"] {
+  border-color: color-mix(in oklab, var(--accent) 65%, var(--border));
   color: var(--accent);
 }
 
@@ -205,7 +251,7 @@ a {
   display: inline-block;
   padding: 0 0.35rem;
   border: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: calc(var(--radius) - 2px);
   color: var(--muted);
   font-family: var(--font-sans);
   font-size: 10px;
@@ -223,7 +269,7 @@ a {
   text-align: left;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: var(--radius);
   color: var(--fg);
   cursor: pointer;
   min-width: 0;
@@ -235,7 +281,7 @@ a {
 }
 
 .kind-pick[data-active="true"] {
-  border-color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 65%, var(--border));
 }
 
 .field {
@@ -243,7 +289,7 @@ a {
   padding: 0.5rem 0.65rem;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: var(--radius);
   color: var(--fg);
   caret-color: var(--accent);
   font-family: var(--font-mono);
@@ -253,7 +299,7 @@ a {
 .field:focus,
 .field:focus-visible {
   outline: none;
-  border-color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 70%, var(--border));
 }
 
 select.field {
@@ -280,7 +326,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid color-mix(in oklab, var(--accent) 70%, var(--border));
   outline-offset: 2px;
 }
 

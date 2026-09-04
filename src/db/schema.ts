@@ -92,6 +92,7 @@ export const fetches = pgTable(
     colorschemeSlug: text("colorscheme_slug"),
     displayServer: text("display_server"),
     layout: text("layout"),
+    voteCount: integer("vote_count").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
     lastVerifiedAt: timestamp("last_verified_at").notNull().defaultNow(),
@@ -103,9 +104,27 @@ export const fetches = pgTable(
     index("fetches_colorscheme_slug_idx").on(t.colorschemeSlug),
     index("fetches_display_server_idx").on(t.displayServer),
     index("fetches_layout_idx").on(t.layout),
+    index("fetches_vote_count_idx").on(t.voteCount),
     index("fetches_last_verified_idx").on(t.lastVerifiedAt),
     index("fetches_handle_idx").on(t.handle),
     index("fetches_visibility_idx").on(t.visibility),
+  ],
+);
+
+export const fetchVotes = pgTable(
+  "fetch_votes",
+  {
+    fetchId: text("fetch_id")
+      .notNull()
+      .references(() => fetches.id, { onDelete: "cascade" }),
+    voterId: text("voter_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.fetchId, t.voterId] }),
+    index("fetch_votes_voter_idx").on(t.voterId),
   ],
 );
 

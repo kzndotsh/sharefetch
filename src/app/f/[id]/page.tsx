@@ -6,8 +6,9 @@ import { ChipLink } from "@/components/chip-link";
 import { CopyButton } from "@/components/copy-button";
 import { KindCue } from "@/components/kind-cue";
 import { Verified } from "@/components/verified";
-import { changelogFor, getPublicFetch } from "@/db/queries";
+import { changelogFor, getPublicFetch, hasVoted } from "@/db/queries";
 import { currentActorId, requestOrigin } from "@/lib/actor";
+import { VoteButton } from "@/components/vote-button";
 import { EMBED_THEMES, type EmbedThemeId } from "@/lib/embed-query";
 import { embedMarkdown, embedSvgUrl } from "@/lib/embed-snippet";
 import { exploreHref } from "@/lib/explore-params";
@@ -53,6 +54,7 @@ export default async function FetchPage(props: PageProps<"/f/[id]">) {
     currentActorId(),
     requestOrigin(),
   ]);
+  const voted = actor ? await hasVoted(id, actor) : false;
   const spec = row.spec;
   const theme = pickTheme(searchParams.theme);
   const svgUrl = embedSvgUrl(origin, id, theme, row.updatedAt);
@@ -72,9 +74,19 @@ export default async function FetchPage(props: PageProps<"/f/[id]">) {
             fetch · <Link href={`/u/${row.handle}`} className="hover:text-fg">@{row.handle}</Link>
             {row.visibility === "unlisted" ? " · unlisted" : ""}
           </p>
-          <h1 className="text-2xl font-medium leading-snug">{spec.title}</h1>
-          {spec.headline ? <p className="text-muted">{spec.headline}</p> : null}
-          <Verified at={row.lastVerifiedAt} />
+          <div className="flex items-start gap-4">
+            <VoteButton
+              fetchId={row.id}
+              voteCount={row.voteCount}
+              voted={voted}
+              isOwner={isOwner}
+            />
+            <div className="min-w-0 flex flex-col gap-2">
+              <h1 className="text-2xl font-medium leading-snug">{spec.title}</h1>
+              {spec.headline ? <p className="text-muted">{spec.headline}</p> : null}
+              <Verified at={row.lastVerifiedAt} />
+            </div>
+          </div>
         </header>
 
         <figure className="printout p-3 flex flex-col gap-3">

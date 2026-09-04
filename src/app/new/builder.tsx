@@ -501,7 +501,7 @@ export function Builder({
           </div>
           <button
             type="button"
-            className="text-left rounded-none border border-border px-2.5 py-2 hover:border-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="text-left rounded-[var(--radius)] border border-border px-2.5 py-2 hover:border-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             aria-label="Copy share builder link"
             title="Click to copy"
             onClick={() => {

@@ -34,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </main>
         <footer className="rule chrome text-muted text-xs">
           <div className="max-w-6xl mx-auto px-5 py-4 flex justify-between gap-4">
-            <span>sharefetch · a fetch is a claim about a stack; verify yours.</span>
+            <span>sharefetch</span>
             <a href="/explore" className="hover:text-fg">
               explore
             </a>

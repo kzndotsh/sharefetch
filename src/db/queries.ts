@@ -1,7 +1,7 @@
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { getDb } from "@/db";
-import { fetchChangelog, fetches, fetchUtils, tools, user } from "@/db/schema";
+import { fetchChangelog, fetches, fetchUtils, fetchVotes, tools, user } from "@/db/schema";
 import { summarizeMutation } from "@/lib/changelog";
 import type { FetchSpec, PublishedFetchSpec } from "@/lib/fetch-spec";
 import { hydrateFetchSpec, parseFetchSpec } from "@/lib/fetch-spec";
@@ -16,7 +16,7 @@ export type ExploreFilters = {
   util?: string;
   displayServer?: string;
   layout?: string;
-  sort?: "latest" | "random";
+  sort?: "latest" | "random" | "popular";
 };
 
 function withHydratedSpec<T extends { spec: FetchSpec }>(row: T): T {
@@ -137,6 +137,63 @@ export async function getPublicFetch(id: string) {
 
 export async function listExplore(filters: ExploreFilters) {
   const db = getDb();
+  const where = await exploreWhere(filters);
+  if (!where) {
+    return [];
+  }
+
+  const sort = filters.sort ?? "popular";
+  if (sort === "random") {
+    return db
+      .select()
+      .from(fetches)
+      .where(where)
+      .orderBy(sql`random()`)
+      .limit(48)
+      .then((rows) => rows.map(withHydratedSpec));
+  }
+  if (sort === "latest") {
+    return db
+      .select()
+      .from(fetches)
+      .where(where)
+      .orderBy(desc(fetches.lastVerifiedAt))
+      .limit(48)
+      .then((rows) => rows.map(withHydratedSpec));
+  }
+  return db
+    .select()
+    .from(fetches)
+    .where(where)
+    .orderBy(desc(fetches.voteCount), desc(fetches.lastVerifiedAt))
+    .limit(48)
+    .then((rows) => rows.map(withHydratedSpec));
+}
+
+export async function countExplore(filters: ExploreFilters): Promise<number> {
+  const db = getDb();
+  const where = await exploreWhere(filters);
+  if (!where) {
+    return 0;
+  }
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(fetches)
+    .where(where);
+  return row?.count ?? 0;
+}
+
+export async function countPublicFetches(): Promise<number> {
+  const db = getDb();
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(fetches)
+    .where(eq(fetches.visibility, "public"));
+  return row?.count ?? 0;
+}
+
+async function exploreWhere(filters: ExploreFilters) {
+  const db = getDb();
   const clauses = [eq(fetches.visibility, "public")];
   if (filters.desktop) {
     clauses.push(eq(fetches.desktopSlug, filters.desktop));
@@ -161,30 +218,19 @@ export async function listExplore(filters: ExploreFilters) {
     clauses.push(or(ilike(fetches.title, q), ilike(fetches.handle, q))!);
   }
 
-  let ids: string[] | null = null;
   if (filters.util) {
     const utilRows = await db
       .select({ fetchId: fetchUtils.fetchId })
       .from(fetchUtils)
       .where(eq(fetchUtils.slug, filters.util));
-    ids = utilRows.map((r) => r.fetchId);
+    const ids = utilRows.map((r) => r.fetchId);
     if (ids.length === 0) {
-      return [];
+      return null;
     }
+    return and(...clauses, inArray(fetches.id, ids));
   }
 
-  const where = ids ? and(...clauses, inArray(fetches.id, ids)) : and(...clauses);
-
-  const order =
-    filters.sort === "random" ? sql`random()` : desc(fetches.lastVerifiedAt);
-
-  return db
-    .select()
-    .from(fetches)
-    .where(where)
-    .orderBy(order)
-    .limit(48)
-    .then((rows) => rows.map(withHydratedSpec));
+  return and(...clauses);
 }
 
 export async function facetCounts() {
@@ -296,4 +342,94 @@ export async function ensureHandleUser(handle: string, name?: string) {
     })
     .returning();
   return created;
+}
+
+export async function toggleFetchVote(input: {
+  fetchId: string;
+  voterId: string;
+}): Promise<{ voteCount: number; voted: boolean }> {
+  const db = getDb();
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(fetchVotes)
+      .where(
+        and(
+          eq(fetchVotes.fetchId, input.fetchId),
+          eq(fetchVotes.voterId, input.voterId),
+        ),
+      )
+      .limit(1);
+
+    if (existing) {
+      await tx
+        .delete(fetchVotes)
+        .where(
+          and(
+            eq(fetchVotes.fetchId, input.fetchId),
+            eq(fetchVotes.voterId, input.voterId),
+          ),
+        );
+      await tx
+        .update(fetches)
+        .set({
+          voteCount: sql`GREATEST(0, ${fetches.voteCount} - 1)`,
+        })
+        .where(eq(fetches.id, input.fetchId));
+    } else {
+      await tx.insert(fetchVotes).values({
+        fetchId: input.fetchId,
+        voterId: input.voterId,
+        createdAt: new Date(),
+      });
+      await tx
+        .update(fetches)
+        .set({
+          voteCount: sql`${fetches.voteCount} + 1`,
+        })
+        .where(eq(fetches.id, input.fetchId));
+    }
+
+    const [row] = await tx
+      .select({ voteCount: fetches.voteCount })
+      .from(fetches)
+      .where(eq(fetches.id, input.fetchId))
+      .limit(1);
+    return {
+      voteCount: row?.voteCount ?? 0,
+      voted: !existing,
+    };
+  });
+}
+
+export async function votesForVoter(
+  voterId: string,
+  fetchIds: string[],
+): Promise<Set<string>> {
+  if (fetchIds.length === 0) {
+    return new Set();
+  }
+  const db = getDb();
+  const rows = await db
+    .select({ fetchId: fetchVotes.fetchId })
+    .from(fetchVotes)
+    .where(
+      and(
+        eq(fetchVotes.voterId, voterId),
+        inArray(fetchVotes.fetchId, fetchIds),
+      ),
+    );
+  return new Set(rows.map((r) => r.fetchId));
+}
+
+export async function hasVoted(fetchId: string, voterId: string): Promise<boolean> {
+  const db = getDb();
+  const [row] = await db
+    .select({ fetchId: fetchVotes.fetchId })
+    .from(fetchVotes)
+    .where(
+      and(eq(fetchVotes.fetchId, fetchId), eq(fetchVotes.voterId, voterId)),
+    )
+    .limit(1);
+  return Boolean(row);
 }

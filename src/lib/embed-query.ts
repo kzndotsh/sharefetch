@@ -22,11 +22,11 @@ export type EmbedTheme = {
 
 export const THEME_MAP: Record<EmbedThemeId, EmbedTheme> = {
   default: {
-    background: "#0e1216",
-    foreground: "#d7dee5",
-    accent: "#e6c200",
-    muted: "#7d8894",
-    border: "#2c343d",
+    background: "#0c1014",
+    foreground: "#d0d7de",
+    accent: "#8fa3b4",
+    muted: "#7e8a96",
+    border: "#2a323b",
   },
   dark: {
     background: "#0e1014",
