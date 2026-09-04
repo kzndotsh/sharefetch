@@ -32,15 +32,15 @@ body {
 
 body:has([data-route="home"]) .nav-home,
 body:has([data-route="explore"]) .nav-explore,
+body:has([data-route="topics"]) .nav-topics,
+body:has([data-route="users"]) .nav-users,
 body:has([data-route="signin"]) .nav-signin {
   color: var(--fg);
 }
 
 body:has([data-route="builder"]) main {
   max-width: none;
-  padding-left: 0;
-  padding-right: 0;
-  padding-bottom: 0;
+  padding: 0;
 }
 
 body:has([data-route="builder"]) > footer {
