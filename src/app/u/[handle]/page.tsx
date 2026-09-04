@@ -23,7 +23,7 @@ export default async function UserPage(props: PageProps<"/u/[handle]">) {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <p className="chrome text-xs tracking-[0.18em] uppercase text-muted">profile</p>
+        <p className="chrome text-xs tracking-[0.18em] uppercase text-muted">user</p>
         <h1 className="text-2xl font-medium">@{handle}</h1>
         {displayName !== handle ? <p className="text-muted">{displayName}</p> : null}
         {account?.bioUrl ? (
