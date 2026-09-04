@@ -38,6 +38,7 @@ import {
   emptyFetchSpec,
   type FetchSpec,
 } from "@/lib/fetch-spec";
+import { FASTFETCH_PASTE_COMMAND } from "@/lib/paste";
 import { slugify } from "@/lib/slug";
 import {
   formatCompatNotes,
@@ -744,7 +745,7 @@ export function Builder({
               aria-controls="paste-panel"
               onClick={() => setPasteOpen((v) => !v)}
             >
-              Paste neofetch
+              Paste fastfetch
             </button>
             <button
               type="button"
@@ -830,18 +831,23 @@ export function Builder({
       {pasteOpen ? (
         <div id="paste-panel" className="printout p-3 flex flex-col gap-2">
           <label className="label" htmlFor="paste">
-            Paste neofetch or fastfetch output
+            Paste fastfetch or neofetch output
           </label>
           <p className="text-xs text-muted">
-            Fills distro, desktop, and utils. Edit anything it gets wrong.
+            Prefer JSON from the command below for the best fill. Plain{" "}
+            <code className="text-fg">key: value</code> text still works.
           </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <code className="text-xs text-muted break-all">{FASTFETCH_PASTE_COMMAND}</code>
+            <CopyButton text={FASTFETCH_PASTE_COMMAND} label="Copy command" />
+          </div>
           <textarea
             id="paste"
             className="field min-h-40 font-mono text-xs"
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
             placeholder={
-              "OS: Arch Linux x86_64\nWM: Hyprland\nTerminal: kitty\nShell: zsh 5.9\nTheme: Catppuccin-Mocha"
+              '[{ "type": "OS", "result": { "id": "arch", "prettyName": "Arch Linux" } }, …]'
             }
           />
           <div className="flex gap-2">

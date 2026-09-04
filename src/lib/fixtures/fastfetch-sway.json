@@ -1,0 +1,119 @@
+[
+  {
+    "type": "OS",
+    "result": {
+      "id": "nixos",
+      "name": "NixOS",
+      "prettyName": "NixOS 26.11 (Zokor)",
+      "version": "26.11 (Zokor)",
+      "versionID": "26.11"
+    }
+  },
+  {
+    "type": "WM",
+    "result": {
+      "processName": "sway",
+      "prettyName": "Sway",
+      "protocolName": "Wayland",
+      "pluginName": "",
+      "version": "1.12"
+    }
+  },
+  {
+    "type": "DE",
+    "error": "No DE found"
+  },
+  {
+    "type": "Terminal",
+    "result": {
+      "processName": "kitty",
+      "prettyName": "kitty",
+      "version": "0.40.0"
+    }
+  },
+  {
+    "type": "Shell",
+    "result": {
+      "processName": "zsh",
+      "prettyName": "zsh",
+      "version": "5.9.2"
+    }
+  },
+  {
+    "type": "Theme",
+    "result": {
+      "theme1": "Kvantum-Tokyo-Night [Qt]",
+      "theme2": "Tokyonight-Dark [GTK3]"
+    }
+  },
+  {
+    "type": "Icons",
+    "result": {
+      "icons1": "TokyoNight-SE [Qt]",
+      "icons2": "TokyoNight-SE [GTK3/4]"
+    }
+  },
+  {
+    "type": "Font",
+    "result": {
+      "display": "Inter Nerd Font (11pt) [GTK3/4]",
+      "fonts": ["", "", "Inter Nerd Font (11pt)", "Inter Nerd Font (11pt)"]
+    }
+  },
+  {
+    "type": "Cursor",
+    "result": {
+      "theme": "catppuccin-mocha-blue-cursors",
+      "size": "24"
+    }
+  },
+  {
+    "type": "Packages",
+    "result": {
+      "all": 2558,
+      "nixSystem": 2558
+    }
+  },
+  {
+    "type": "Display",
+    "result": [
+      {
+        "name": "MSI5CE8",
+        "primary": true,
+        "output": {
+          "width": 3840,
+          "height": 2160,
+          "refreshRate": 144.0
+        }
+      }
+    ]
+  },
+  {
+    "type": "Kernel",
+    "result": {
+      "name": "Linux",
+      "release": "7.1.5-zen1"
+    }
+  },
+  {
+    "type": "CPU",
+    "result": {
+      "cpu": "AMD Ryzen 7 5800X"
+    }
+  },
+  {
+    "type": "GPU",
+    "result": [
+      {
+        "name": "AMD Radeon RX 6700 XT"
+      }
+    ]
+  },
+  {
+    "type": "Memory",
+    "result": {
+      "total": 134990139392,
+      "used": 48760840192
+    }
+  }
+]

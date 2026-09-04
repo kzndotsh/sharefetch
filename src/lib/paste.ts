@@ -1,7 +1,13 @@
 import { COLORSCHEMES, DISTROS, findUtil, lookupDesktop } from "./catalogs";
 import {
+  looksLikeFastfetchJson,
+  matchColorscheme,
+  parseFastfetchJson,
+} from "./fastfetch-json";
+import {
   DEFAULT_SECTION_ORDER,
   type FetchSpec,
+  type LayerItem,
   type UtilItem,
   type UtilRole,
 } from "./fetch-spec";
@@ -50,15 +56,34 @@ function utilFrom(value: string, role: UtilRole): UtilItem | null {
   };
 }
 
-export function parseFetchPaste(raw: string, handle: string): FetchSpec {
+function pushLayer(items: LayerItem[], item: LayerItem) {
+  if (items.some((existing) => existing.key === item.key)) {
+    return;
+  }
+  items.push(item);
+}
+
+function parseFetchPasteText(raw: string, handle: string): FetchSpec {
   const rows = parseLines(raw);
   const de = first(rows, ["de", "desktop environment", "desktop"]);
   const wm = first(rows, ["wm", "window manager"]);
   const desktop = resolveDesktopFromLabels({ de, wm });
   const distroRaw = first(rows, ["os", "distro", "host"]);
-  const themeRaw = first(rows, ["theme", "wm theme", "gtk theme"]);
+  const themeRaw = first(rows, [
+    "theme",
+    "wm theme",
+    "wmtheme",
+    "gtk theme",
+  ]);
+  const iconsRaw = first(rows, ["icons", "icon theme"]);
+  const fontRaw = first(rows, ["font", "fonts"]);
+  const cursorRaw = first(rows, ["cursor", "cursor theme"]);
+  const terminalFontRaw = first(rows, ["terminal font", "terminalfont"]);
+  const packagesRaw = first(rows, ["packages", "package"]);
+  const displayRaw = first(rows, ["display", "resolution", "monitor"]);
   const terminalRaw = first(rows, ["terminal"]);
   const shellRaw = first(rows, ["shell"]);
+  const editorRaw = first(rows, ["editor"]);
   const kernel = first(rows, ["kernel"]);
   const cpu = first(rows, ["cpu"]);
   const gpu = first(rows, ["gpu"]);
@@ -78,6 +103,12 @@ export function parseFetchPaste(raw: string, handle: string): FetchSpec {
       utils.push(u);
     }
   }
+  if (editorRaw) {
+    const u = utilFrom(editorRaw.replace(/\s.*$/, ""), "editor");
+    if (u) {
+      utils.push(u);
+    }
+  }
 
   const compositorRaw = first(rows, ["compositor"]);
   const compositor =
@@ -92,14 +123,55 @@ export function parseFetchPaste(raw: string, handle: string): FetchSpec {
     ? DISTROS.find((d) => d.slug === distro.slug) ?? distro
     : undefined;
 
-  let colorscheme = themeRaw ? labeledFrom(themeRaw) : undefined;
-  if (colorscheme) {
-    const known = COLORSCHEMES.find((c) => c.slug === colorscheme!.slug);
+  let colorscheme =
+    (themeRaw ? matchColorscheme(themeRaw) : undefined) ??
+    (cursorRaw ? matchColorscheme(cursorRaw) : undefined);
+  if (!colorscheme && themeRaw) {
+    const labeled = labeledFrom(themeRaw);
+    const known = COLORSCHEMES.find((c) => c.slug === labeled.slug);
     if (known) {
       colorscheme = known;
-    } else if (!COLORSCHEMES.some((c) => themeRaw!.toLowerCase().includes(c.slug))) {
-      colorscheme = undefined;
     }
+  }
+
+  const system: LayerItem[] = [
+    ...(kernel ? [{ key: "kernel", label: "Kernel", value: kernel }] : []),
+    ...(packagesRaw
+      ? [{ key: "packages", label: "Packages", value: packagesRaw }]
+      : []),
+  ];
+  const hardware: LayerItem[] = [
+    ...(cpu ? [{ key: "cpu", label: "CPU", value: cpu }] : []),
+    ...(gpu ? [{ key: "gpu", label: "GPU", value: gpu }] : []),
+    ...(memory ? [{ key: "ram", label: "Memory", value: memory }] : []),
+  ];
+  const aesthetic: LayerItem[] = [];
+  if (themeRaw) {
+    pushLayer(aesthetic, { key: "theme", label: "Theme", value: themeRaw });
+  }
+  if (iconsRaw) {
+    pushLayer(aesthetic, { key: "icons", label: "Icons", value: iconsRaw });
+  }
+  if (fontRaw) {
+    pushLayer(aesthetic, { key: "font", label: "Font", value: fontRaw });
+  }
+  if (cursorRaw) {
+    pushLayer(aesthetic, { key: "cursor", label: "Cursor", value: cursorRaw });
+  }
+  if (terminalFontRaw) {
+    pushLayer(aesthetic, {
+      key: "terminal-font",
+      label: "Terminal font",
+      value: terminalFontRaw,
+    });
+  }
+  const desktopLayers: LayerItem[] = [];
+  if (displayRaw) {
+    pushLayer(desktopLayers, {
+      key: "display",
+      label: "Display",
+      value: displayRaw,
+    });
   }
 
   const spec: FetchSpec = {
@@ -120,16 +192,10 @@ export function parseFetchPaste(raw: string, handle: string): FetchSpec {
     colorscheme,
     utils: { items: utils },
     layers: {
-      system: [
-        ...(kernel
-          ? [{ key: "kernel", label: "Kernel", value: kernel }]
-          : []),
-      ],
-      hardware: [
-        ...(cpu ? [{ key: "cpu", label: "CPU", value: cpu }] : []),
-        ...(gpu ? [{ key: "gpu", label: "GPU", value: gpu }] : []),
-        ...(memory ? [{ key: "ram", label: "Memory", value: memory }] : []),
-      ],
+      system: system.length ? system : undefined,
+      desktop: desktopLayers.length ? desktopLayers : undefined,
+      hardware: hardware.length ? hardware : undefined,
+      aesthetic: aesthetic.length ? aesthetic : undefined,
     },
     sectionOrder: [...DEFAULT_SECTION_ORDER],
     tags: [],
@@ -143,3 +209,18 @@ export function parseFetchPaste(raw: string, handle: string): FetchSpec {
   }
   return spec;
 }
+
+export function parseFetchPaste(raw: string, handle: string): FetchSpec {
+  const trimmed = raw.trim();
+  if (looksLikeFastfetchJson(trimmed)) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      return parseFastfetchJson(parsed, handle, trimmed);
+    } catch {
+      // Malformed JSON that looked like an array — fall through to text.
+    }
+  }
+  return parseFetchPasteText(raw, handle);
+}
+
+export { FASTFETCH_PASTE_COMMAND } from "./fastfetch-json";
