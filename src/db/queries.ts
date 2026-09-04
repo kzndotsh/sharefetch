@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, max, or, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { getDb } from "@/db";
 import { fetchChangelog, fetches, fetchUtils, fetchVotes, tools, user } from "@/db/schema";
@@ -289,6 +289,21 @@ export async function listByHandle(handle: string) {
     .where(and(eq(fetches.handle, handle), eq(fetches.visibility, "public")))
     .orderBy(desc(fetches.updatedAt));
   return rows.map(withHydratedSpec);
+}
+
+export async function listPublicUsers() {
+  const db = getDb();
+  return db
+    .select({
+      handle: fetches.handle,
+      displayName: sql<string>`max(${fetches.displayName})`,
+      fetchCount: sql<number>`count(*)::int`,
+      lastVerifiedAt: max(fetches.lastVerifiedAt),
+    })
+    .from(fetches)
+    .where(eq(fetches.visibility, "public"))
+    .groupBy(fetches.handle)
+    .orderBy(desc(sql`count(*)`), fetches.handle);
 }
 
 export async function latestPublic(limit = 8) {
