@@ -106,7 +106,7 @@ export function LabeledPicker({
           </ChipButton>
         ))}
         {value && !inCatalog && value.slug ? (
-          <ChipButton active onClick={() => (allowClear ? onPick(undefined) : undefined)} title="custom entry">
+          <ChipButton active onClick={() => allowClear && onPick(undefined)} title="custom entry">
             {value.label}
           </ChipButton>
         ) : null}

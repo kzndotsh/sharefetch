@@ -59,23 +59,23 @@ export default async function ExplorePage(props: PageProps<"/explore">) {
 
   function kindFacet() {
     return (
-    <Facet title="Kind">
-      {DESKTOP_KINDS.map((kind) => {
-        const t = toggleHref(filters, "kind", kind);
-        return (
-          <ChipLink key={kind} href={t.href} active={t.active} count={kindCounts.get(kind) ?? 0}>
-            {desktopKindCue(kind)}
-            <span className="text-muted">{kindLabel(kind).toLowerCase()}</span>
-          </ChipLink>
-        );
-      })}
-    </Facet>
+      <Facet title="Kind">
+        {DESKTOP_KINDS.map((kind) => {
+          const t = toggleHref(filters, "kind", kind);
+          return (
+            <ChipLink key={kind} href={t.href} active={t.active} count={kindCounts.get(kind) ?? 0}>
+              {desktopKindCue(kind)}
+              <span className="text-muted">{kindLabel(kind).toLowerCase()}</span>
+            </ChipLink>
+          );
+        })}
+      </Facet>
     );
   }
 
   function extraFacets() {
     return (
-    <>
+      <>
       <Facet title="Desktop">
         {desktops.map((d) => {
           const t = toggleHref(filters, "desktop", d.slug);
@@ -128,7 +128,7 @@ export default async function ExplorePage(props: PageProps<"/explore">) {
           );
         })}
       </Facet>
-    </>
+      </>
     );
   }
 

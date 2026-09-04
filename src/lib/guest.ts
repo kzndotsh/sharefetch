@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 
 const COOKIE = "sharefetch_guest";
@@ -42,8 +42,4 @@ export async function setGuestCookie(userId: string) {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
   });
-}
-
-export function hashToken(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
 }

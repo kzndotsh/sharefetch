@@ -35,10 +35,8 @@ const CLOBBER_PROMPT =
 function previewQuery(spec: FetchSpec): EmbedQuery {
   return {
     theme: EMBED_THEMES.find((t) => t === spec.theme) ?? "default",
-    hide: undefined,
     show_icons: false,
     layout: "full",
-    v: undefined,
   };
 }
 
@@ -67,16 +65,6 @@ function resolveInitial(editId: string | undefined, existing: Loaded | null): In
 }
 
 export function Builder({
-  editId,
-  existing,
-}: {
-  editId?: string;
-  existing: Loaded | null;
-}) {
-  return <BuilderForm editId={editId} existing={existing} />;
-}
-
-function BuilderForm({
   editId,
   existing,
 }: {

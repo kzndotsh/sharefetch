@@ -36,7 +36,6 @@ export async function upsertFetch(input: {
   ownerId: string;
   spec: FetchSpec;
   previous?: FetchSpec | null;
-  replaceSectionOrder?: boolean;
 }) {
   const db = getDb();
   const spec = parseFetchSpec(input.spec);

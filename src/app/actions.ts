@@ -7,9 +7,8 @@ import { auth } from "@/lib/auth";
 import { mergeIncomingSpec } from "@/lib/changelog";
 import { parseFetchSpec, type FetchSpec } from "@/lib/fetch-spec";
 import { guestUserId, setGuestCookie } from "@/lib/guest";
-import { mapAwesomeDotfiles, type AwesomeDotfilesRow } from "@/lib/awesome-dotfiles";
 import { parseFetchPaste } from "@/lib/paste";
-import { ensureHandleUser, getPublicFetch, upsertFetch } from "@/db/queries";
+import { ensureHandleUser, upsertFetch } from "@/db/queries";
 import { getDb } from "@/db";
 import { eq } from "drizzle-orm";
 import { fetches } from "@/db/schema";
@@ -50,7 +49,6 @@ export async function publishFetch(input: {
     ownerId,
     spec: merged,
     previous: previousRow?.spec ?? null,
-    replaceSectionOrder: input.replaceSectionOrder,
   });
   redirect(`/f/${id}`);
 }
@@ -72,15 +70,4 @@ export async function reverifyFetch(id: string) {
 
 export async function pasteIntoSpec(raw: string, handle: string): Promise<FetchSpec> {
   return parseFetchPaste(raw, handle);
-}
-
-export async function importAwesomeRow(
-  row: AwesomeDotfilesRow,
-  handle: string,
-): Promise<FetchSpec> {
-  return mapAwesomeDotfiles(row, handle);
-}
-
-export async function loadFetch(id: string) {
-  return getPublicFetch(id);
 }

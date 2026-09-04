@@ -137,9 +137,9 @@ export function parseFetchPaste(raw: string, handle: string): FetchSpec {
   };
 
   spec.displayServer = deriveDisplayServer(spec);
-  if (lookupDesktop(spec.desktop.slug)?.entry.displayServer) {
-    spec.displayServer =
-      lookupDesktop(spec.desktop.slug)?.entry.displayServer ?? spec.displayServer;
+  const catalogDesktop = lookupDesktop(spec.desktop.slug);
+  if (catalogDesktop?.entry.displayServer) {
+    spec.displayServer = catalogDesktop.entry.displayServer;
   }
   return spec;
 }

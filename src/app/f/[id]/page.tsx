@@ -60,6 +60,7 @@ export default async function FetchPage(props: PageProps<"/f/[id]">) {
   const snippet = embedMarkdown(origin, id, theme, row.updatedAt);
   const isOwner = actor !== null && actor === row.ownerId;
   const traits = deriveTraits(spec);
+  const groupedUtils = utilsByRole(spec);
   const layers = LAYER_KEYS.map((key) => ({ key, items: spec.layers[key] ?? [] })).filter(
     (l) => l.items.length > 0,
   );
@@ -198,11 +199,11 @@ export default async function FetchPage(props: PageProps<"/f/[id]">) {
           <Row label="updated">{isoDate(row.updatedAt)}</Row>
         </dl>
 
-        {utilsByRole(spec).length ? (
+        {groupedUtils.length ? (
           <section className="flex flex-col gap-2">
             <h2 className="label">Stack</h2>
             <dl className="printout p-4 text-xs">
-              {utilsByRole(spec).map((group) => (
+              {groupedUtils.map((group) => (
                 <Row key={group.role} label={group.role}>
                   <span className="flex flex-wrap gap-1.5">
                     {spec.utils.items

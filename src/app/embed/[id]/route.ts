@@ -9,7 +9,7 @@ export async function GET(
   const { id: rawId } = await context.params;
   const id = rawId.replace(/\.svg$/i, "");
   const row = await getPublicFetch(id);
-  if (!row || (row.visibility !== "public" && row.visibility !== "unlisted")) {
+  if (!row) {
     return new Response("Not found", { status: 404 });
   }
   const query = parseEmbedQuery(new URL(request.url).searchParams);

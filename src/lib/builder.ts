@@ -43,10 +43,10 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   screenshots: "Screenshots",
 };
 
-export const CLAIM_SECTIONS: readonly SectionKey[] = ["title", "desktop", "distro"];
+const CLAIM_SECTIONS = new Set<SectionKey>(["title", "desktop", "distro"]);
 
 export function isClaimSection(key: SectionKey): boolean {
-  return (CLAIM_SECTIONS as readonly string[]).includes(key);
+  return CLAIM_SECTIONS.has(key);
 }
 
 function isSectionKey(value: string): value is SectionKey {
