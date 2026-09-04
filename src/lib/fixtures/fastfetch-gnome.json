@@ -1,0 +1,80 @@
+[
+  {
+    "type": "OS",
+    "result": {
+      "id": "fedora",
+      "name": "Fedora Linux",
+      "prettyName": "Fedora Linux 40 (Workstation Edition)",
+      "version": "40 (Workstation Edition)",
+      "versionID": "40"
+    }
+  },
+  {
+    "type": "WM",
+    "result": {
+      "processName": "gnome-shell",
+      "prettyName": "Mutter",
+      "protocolName": "Wayland",
+      "pluginName": "",
+      "version": "46.0"
+    }
+  },
+  {
+    "type": "DE",
+    "result": {
+      "processName": "gnome-shell",
+      "prettyName": "GNOME",
+      "version": "46"
+    }
+  },
+  {
+    "type": "Terminal",
+    "result": {
+      "processName": "kgx",
+      "prettyName": "GNOME Console",
+      "version": "46.0"
+    }
+  },
+  {
+    "type": "Shell",
+    "result": {
+      "processName": "bash",
+      "prettyName": "bash",
+      "version": "5.2.26"
+    }
+  },
+  {
+    "type": "Theme",
+    "result": {
+      "theme1": "Adwaita [GTK3/4]"
+    }
+  },
+  {
+    "type": "Packages",
+    "result": {
+      "all": 2140,
+      "rpm": 2140
+    }
+  },
+  {
+    "type": "Display",
+    "result": [
+      {
+        "primary": true,
+        "output": {
+          "width": 1920,
+          "height": 1080,
+          "refreshRate": 60
+        }
+      }
+    ]
+  },
+  {
+    "type": "Editor",
+    "result": {
+      "name": "neovim",
+      "exe": "nvim",
+      "version": "0.10.0"
+    }
+  }
+]

@@ -19,10 +19,15 @@ const TILING_SLUGS = new Set([
   "xmonad",
   "qtile",
   "herbstluftwm",
+  "leftwm",
+  "berry",
   "hyprland",
   "sway",
+  "swayfx",
   "niri",
   "river",
+  "labwc",
+  "dwl",
   "yabai",
   "aerospace",
 ]);
@@ -35,8 +40,17 @@ const STACKING_SLUGS = new Set([
   "mate",
   "lxqt",
   "openbox",
+  "icewm",
+  "fluxbox",
+  "jwm",
   "wayfire",
   "budgie",
+  "pantheon",
+  "deepin",
+  "enlightenment",
+  "trinity",
+  "cage",
+  "weston",
 ]);
 
 export function deriveDisplayServer(spec: Pick<FetchSpec, "desktop" | "displayServer">): DisplayServer | undefined {
