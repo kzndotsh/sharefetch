@@ -19,7 +19,7 @@ import {
 } from "@/lib/builder";
 import { EMBED_THEMES, type EmbedQuery } from "@/lib/embed-query";
 import { embedMarkdown } from "@/lib/embed-snippet";
-import { emptyFetchSpec, parseFetchSpec, type FetchSpec } from "@/lib/fetch-spec";
+import { emptyFetchSpec, type FetchSpec } from "@/lib/fetch-spec";
 import { slugify } from "@/lib/slug";
 import { renderFetchSvg } from "@/lib/svg";
 import { SectionBody, type Update } from "./sections";
@@ -135,7 +135,7 @@ export function Builder({
   const importJsonFile = (file: File) => {
     file.text().then((text) => {
       try {
-        replaceSpec(parseFetchSpec(JSON.parse(text)), file.name);
+        replaceSpec(parseDraftSpec(JSON.parse(text)), file.name);
       } catch (err) {
         setStatus({ tone: "error", text: `Invalid fetch JSON: ${String(err)}` });
       }

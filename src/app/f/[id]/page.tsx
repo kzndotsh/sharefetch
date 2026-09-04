@@ -162,7 +162,7 @@ export default async function FetchPage(props: PageProps<"/f/[id]">) {
             <Link href={exploreHref({}, { desktop: spec.desktop.slug })} className="hover:text-accent">
               {spec.desktop.label}
             </Link>
-            <KindCue kind={spec.desktop.kind} />
+            {spec.desktop.kind ? <KindCue kind={spec.desktop.kind} /> : null}
           </Row>
           {spec.de && spec.de.slug !== spec.desktop.slug ? <Row label="DE">{spec.de.label}</Row> : null}
           {spec.wm && spec.wm.slug !== spec.desktop.slug ? <Row label="WM">{spec.wm.label}</Row> : null}

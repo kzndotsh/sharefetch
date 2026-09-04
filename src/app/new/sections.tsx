@@ -209,16 +209,20 @@ function DesktopSection({ spec, update }: SectionProps) {
           </button>
         ))}
       </div>
-      <LabeledPicker
-        options={catalogForKind(kind)}
-        value={spec.desktop.slug ? spec.desktop : undefined}
-        onPick={(entry) =>
-          update((s) =>
-            entry ? chooseDesktop(s, entry) : { ...s, desktop: { kind: s.desktop.kind, label: "", slug: "" } },
-          )
-        }
-        customPlaceholder={kind === "de" ? "Pantheon" : kind === "wm" ? "spectrwm" : "Hyprland"}
-      />
+      {kind ? (
+        <LabeledPicker
+          options={catalogForKind(kind)}
+          value={spec.desktop.slug ? spec.desktop : undefined}
+          onPick={(entry) =>
+            update((s) =>
+              entry ? chooseDesktop(s, entry) : { ...s, desktop: { kind: s.desktop.kind, label: "", slug: "" } },
+            )
+          }
+          customPlaceholder={kind === "de" ? "Pantheon" : kind === "wm" ? "spectrwm" : "Hyprland"}
+        />
+      ) : (
+        <p className="text-xs text-muted">Name the session after you pick a kind.</p>
+      )}
     </div>
   );
 }
@@ -246,6 +250,13 @@ function DisplayServerSection({ spec, update }: SectionProps) {
 
 function DetailSection({ spec, update }: SectionProps) {
   const kind = spec.desktop.kind;
+  if (!kind) {
+    return (
+      <p className="text-xs text-muted">
+        Pick window manager, desktop environment, or compositor session first.
+      </p>
+    );
+  }
   const fields = ((): { id: string; label: string; placeholder: string; hint: string; value: string; apply: (raw: string) => void }[] => {
     const setLabeled = (slot: "wm" | "de" | "compositor") => (raw: string) =>
       update((s) => ({ ...s, [slot]: raw.trim() ? labeledFrom(raw) : undefined }));

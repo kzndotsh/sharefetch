@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import { getDb } from "@/db";
 import { fetchChangelog, fetches, fetchUtils, tools, user } from "@/db/schema";
 import { summarizeMutation } from "@/lib/changelog";
-import type { FetchSpec } from "@/lib/fetch-spec";
+import type { FetchSpec, PublishedFetchSpec } from "@/lib/fetch-spec";
 import { parseFetchSpec } from "@/lib/fetch-spec";
 
 export type ExploreFilters = {
@@ -17,7 +17,7 @@ export type ExploreFilters = {
   sort?: "latest" | "random";
 };
 
-export function denormalize(spec: FetchSpec) {
+export function denormalize(spec: PublishedFetchSpec) {
   return {
     title: spec.title,
     displayName: spec.displayName,

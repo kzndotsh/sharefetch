@@ -57,14 +57,14 @@ export function renderFetchSvg(
     .slice(0, compact ? 4 : 8)
     .map((u) => u.label)
     .join(" · ");
-  const kind = desktopKindCue(spec.desktop.kind);
-  const desktopLine = `${spec.desktop.label}  ${kind}`;
+  const kindCue = spec.desktop.kind ? desktopKindCue(spec.desktop.kind) : "";
+  const desktopLine = [spec.desktop.label, kindCue].filter(Boolean).join("  ");
   const verified = meta.lastVerifiedAt
     ? new Date(meta.lastVerifiedAt).toISOString().slice(0, 10)
     : "unverified";
 
   const lines: { key: string; value: string; id: string }[] = [];
-  if (!hide.has("desktop")) {
+  if (!hide.has("desktop") && desktopLine) {
     lines.push({ key: "desktop", value: desktopLine, id: "desktop" });
   }
   if (spec.distro && !hide.has("distro")) {

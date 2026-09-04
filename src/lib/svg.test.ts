@@ -26,4 +26,12 @@ describe("svg escape", () => {
     expect(svg).toContain("DE");
     expect(svg).not.toMatch(/>GNOME<\/text>[\s\S]*WM/);
   });
+
+  it("omits the desktop row until a kind or name exists", () => {
+    const svg = renderFetchSvg(emptyFetchSpec(), parseEmbedQuery(new URLSearchParams()), {
+      lastVerifiedAt: null,
+    });
+    expect(svg).not.toContain("compositor");
+    expect(svg).not.toContain(">desktop<");
+  });
 });

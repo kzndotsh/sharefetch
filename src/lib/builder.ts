@@ -107,9 +107,13 @@ export function chooseDesktopKind(spec: FetchSpec, kind: DesktopKind): FetchSpec
 }
 
 export function chooseDesktop(spec: FetchSpec, entry: CatalogEntry): FetchSpec {
+  const kind = spec.desktop.kind;
+  if (!kind) {
+    return spec;
+  }
   return {
     ...spec,
-    desktop: { kind: spec.desktop.kind, label: entry.label, slug: entry.slug },
+    desktop: { kind, label: entry.label, slug: entry.slug },
     displayServer: spec.displayServer ?? entry.displayServer,
   };
 }
@@ -195,7 +199,7 @@ const draftSpecSchema = fetchSpecSchema.extend({
   displayName: z.string(),
   handle: z.string(),
   desktop: z.object({
-    kind: z.enum(DESKTOP_KINDS),
+    kind: z.enum(DESKTOP_KINDS).optional(),
     label: z.string(),
     slug: z.string(),
   }),

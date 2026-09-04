@@ -24,7 +24,7 @@ export function FetchCard({ row }: { row: FetchRow }) {
           <dt className="text-muted">desktop</dt>
           <dd className="flex items-center gap-2 min-w-0">
             <span className="truncate">{spec.desktop.label}</span>
-            <KindCue kind={spec.desktop.kind} />
+            {spec.desktop.kind ? <KindCue kind={spec.desktop.kind} /> : null}
           </dd>
         </div>
         {spec.distro ? (

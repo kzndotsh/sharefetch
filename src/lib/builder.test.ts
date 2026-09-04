@@ -53,8 +53,17 @@ describe("section order", () => {
 });
 
 describe("desktop choice", () => {
+  it("starts with no kind and does not apply a catalog pick until kind is set", () => {
+    const empty = emptyFetchSpec();
+    expect(empty.desktop.kind).toBeUndefined();
+    expect(empty.desktop.slug).toBe("");
+    expect(chooseDesktop(empty, DESKTOP_COMPOSITOR[0]).desktop.slug).toBe("");
+    const kinded = chooseDesktopKind(empty, "compositor");
+    expect(kinded.desktop).toEqual({ kind: "compositor", label: "", slug: "" });
+  });
+
   it("switching kind clears the picked desktop and display server", () => {
-    const spec = chooseDesktop(emptyFetchSpec(), DESKTOP_COMPOSITOR[0]);
+    const spec = chooseDesktop(chooseDesktopKind(emptyFetchSpec(), "compositor"), DESKTOP_COMPOSITOR[0]);
     expect(spec.desktop.slug).toBe("hyprland");
     expect(spec.displayServer).toBe("wayland");
     const de = chooseDesktopKind(spec, "de");
@@ -66,7 +75,10 @@ describe("desktop choice", () => {
   });
 
   it("keeps an explicit display server when picking a desktop", () => {
-    const spec = { ...emptyFetchSpec(), displayServer: "x11" as const };
+    const spec = {
+      ...chooseDesktopKind(emptyFetchSpec(), "compositor"),
+      displayServer: "x11" as const,
+    };
     expect(chooseDesktop(spec, DESKTOP_COMPOSITOR[0]).displayServer).toBe("x11");
   });
 });
@@ -82,7 +94,7 @@ describe("utils and publish", () => {
   it("reports missing required fields in plain language", () => {
     const issues = publishIssues(emptyFetchSpec());
     expect(issues.some((i) => i.includes("title"))).toBe(true);
-    expect(issues.some((i) => i.includes("desktop"))).toBe(true);
+    expect(issues.some((i) => i.includes("window manager") || i.includes("desktop"))).toBe(true);
     expect(issues.some((i) => i.includes("display name"))).toBe(false);
     expect(issues.every((i) => !i.includes(":"))).toBe(true);
   });

@@ -120,7 +120,12 @@ export const fetchSpecSchema = z.looseObject({
     .optional(),
 });
 
-export type FetchSpec = z.infer<typeof fetchSpecSchema>;
+export type PublishedFetchSpec = z.infer<typeof fetchSpecSchema>;
+export type FetchSpec = {
+  [K in keyof PublishedFetchSpec]: K extends "desktop"
+    ? { kind?: DesktopKind; label: string; slug: string }
+    : PublishedFetchSpec[K];
+};
 export type LayerItem = z.infer<typeof layerItemSchema>;
 export type UtilItem = z.infer<typeof utilItemSchema>;
 
@@ -147,7 +152,7 @@ export function emptyFetchSpec(): FetchSpec {
     displayName: "",
     handle: "",
     visibility: "public",
-    desktop: { kind: "compositor", label: "", slug: "" },
+    desktop: { label: "", slug: "" },
     utils: { items: [] },
     layers: {},
     sectionOrder: [...DEFAULT_SECTION_ORDER],
@@ -156,7 +161,7 @@ export function emptyFetchSpec(): FetchSpec {
   };
 }
 
-export function parseFetchSpec(input: unknown): FetchSpec {
+export function parseFetchSpec(input: unknown): PublishedFetchSpec {
   return fetchSpecSchema.parse(input);
 }
 

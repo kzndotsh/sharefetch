@@ -43,6 +43,9 @@ export function deriveDisplayServer(spec: Pick<FetchSpec, "desktop" | "displaySe
   if (spec.displayServer) {
     return spec.displayServer;
   }
+  if (!spec.desktop.kind) {
+    return undefined;
+  }
   return defaultDisplayServer(spec.desktop.kind, spec.desktop.slug);
 }
 
