@@ -12,7 +12,6 @@ import { EMBED_THEMES, type EmbedThemeId } from "@/lib/embed-query";
 import { embedMarkdown, embedSvgUrl } from "@/lib/embed-snippet";
 import { exploreHref } from "@/lib/explore-params";
 import {
-  LAYER_KEYS,
   UTIL_ROLES,
   type FetchSpec,
   type UtilRole,
@@ -61,8 +60,8 @@ export default async function FetchPage(props: PageProps<"/f/[id]">) {
   const isOwner = actor !== null && actor === row.ownerId;
   const traits = deriveTraits(spec);
   const groupedUtils = utilsByRole(spec);
-  const layers = LAYER_KEYS.map((key) => ({ key, items: spec.layers[key] ?? [] })).filter(
-    (l) => l.items.length > 0,
+  const detailRows = spec.layers.filter(
+    (item) => item.label.trim() || (item.value ?? "").trim(),
   );
 
   return (
@@ -220,20 +219,13 @@ export default async function FetchPage(props: PageProps<"/f/[id]">) {
           </section>
         ) : null}
 
-        {layers.length ? (
+        {detailRows.length ? (
           <section className="flex flex-col gap-2">
-            <h2 className="label">Layers</h2>
+            <h2 className="label">Extra details</h2>
             <dl className="printout p-4 text-xs">
-              {layers.map((layer) => (
-                <Row key={layer.key} label={layer.key}>
-                  <span className="flex flex-col gap-0.5">
-                    {layer.items.map((item) => (
-                      <span key={item.key}>
-                        <span className="text-muted">{item.label}</span>
-                        {item.value ? ` ${item.value}` : ""}
-                      </span>
-                    ))}
-                  </span>
+              {detailRows.map((item) => (
+                <Row key={item.key || item.label} label={item.label}>
+                  {item.value ?? ""}
                 </Row>
               ))}
             </dl>

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { currentActorId } from "@/lib/actor";
 import { auth } from "@/lib/auth";
 import { mergeIncomingSpec } from "@/lib/changelog";
-import { parseFetchSpec, type FetchSpec } from "@/lib/fetch-spec";
+import { parseFetchSpec, hydrateFetchSpec, type FetchSpec } from "@/lib/fetch-spec";
 import { guestUserId, setGuestCookie } from "@/lib/guest";
 import { parseFetchPaste } from "@/lib/paste";
 import { ensureHandleUser, upsertFetch } from "@/db/queries";
@@ -47,15 +47,16 @@ export async function publishFetch(input: {
   if (previousRow && previousRow.ownerId !== ownerId) {
     throw new Error("not owner");
   }
+  const previousSpec = previousRow ? hydrateFetchSpec(previousRow.spec) : null;
   const merged =
-    previousRow && !input.replaceSectionOrder
-      ? mergeIncomingSpec(previousRow.spec, spec, false)
+    previousSpec && !input.replaceSectionOrder
+      ? mergeIncomingSpec(previousSpec, spec, false)
       : spec;
   const id = await upsertFetch({
     id: input.id,
     ownerId,
     spec: merged,
-    previous: previousRow?.spec ?? null,
+    previous: previousSpec,
   });
   redirect(`/f/${id}`);
 }
@@ -66,11 +67,12 @@ export async function reverifyFetch(id: string) {
   if (!row || row.ownerId !== ownerId) {
     throw new Error("not owner");
   }
+  const spec = hydrateFetchSpec(row.spec);
   await upsertFetch({
     id,
     ownerId: row.ownerId,
-    spec: row.spec,
-    previous: row.spec,
+    spec,
+    previous: spec,
   });
   redirect(`/f/${id}`);
 }

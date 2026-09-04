@@ -24,7 +24,7 @@ export function StackActions({
           router.push("/new");
         }}
       >
-        Copy stack
+        Fork
       </button>
       {isOwner ? (
         <button

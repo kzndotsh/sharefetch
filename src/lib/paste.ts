@@ -145,34 +145,35 @@ function parseFetchPasteText(raw: string, handle: string): FetchSpec {
     ...(gpu ? [{ key: "gpu", label: "GPU", value: gpu }] : []),
     ...(memory ? [{ key: "ram", label: "Memory", value: memory }] : []),
   ];
-  const aesthetic: LayerItem[] = [];
+  const extras: LayerItem[] = [];
   if (themeRaw) {
-    pushLayer(aesthetic, { key: "theme", label: "Theme", value: themeRaw });
+    pushLayer(extras, { key: "theme", label: "Theme", value: themeRaw });
   }
   if (iconsRaw) {
-    pushLayer(aesthetic, { key: "icons", label: "Icons", value: iconsRaw });
+    pushLayer(extras, { key: "icons", label: "Icons", value: iconsRaw });
   }
   if (fontRaw) {
-    pushLayer(aesthetic, { key: "font", label: "Font", value: fontRaw });
+    pushLayer(extras, { key: "font", label: "Font", value: fontRaw });
   }
   if (cursorRaw) {
-    pushLayer(aesthetic, { key: "cursor", label: "Cursor", value: cursorRaw });
+    pushLayer(extras, { key: "cursor", label: "Cursor", value: cursorRaw });
   }
   if (terminalFontRaw) {
-    pushLayer(aesthetic, {
+    pushLayer(extras, {
       key: "terminal-font",
       label: "Terminal font",
       value: terminalFontRaw,
     });
   }
-  const desktopLayers: LayerItem[] = [];
   if (displayRaw) {
-    pushLayer(desktopLayers, {
+    pushLayer(extras, {
       key: "display",
       label: "Display",
       value: displayRaw,
     });
   }
+
+  const layers = [...system, ...hardware, ...extras];
 
   const spec: FetchSpec = {
     specVersion: 1,
@@ -191,12 +192,7 @@ function parseFetchPasteText(raw: string, handle: string): FetchSpec {
     distro: distroCanon,
     colorscheme,
     utils: { items: utils },
-    layers: {
-      system: system.length ? system : undefined,
-      desktop: desktopLayers.length ? desktopLayers : undefined,
-      hardware: hardware.length ? hardware : undefined,
-      aesthetic: aesthetic.length ? aesthetic : undefined,
-    },
+    layers,
     sectionOrder: [...DEFAULT_SECTION_ORDER],
     tags: [],
     source: { kind: "paste", rawHash: hashRaw(raw) },

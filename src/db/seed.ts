@@ -29,7 +29,7 @@ function f(
       specVersion: 1,
       visibility: "public",
       utils: { items: [] },
-      layers: {},
+      layers: [],
       sectionOrder: [...DEFAULT_SECTION_ORDER],
       tags: [],
       handle: ownerHandle,

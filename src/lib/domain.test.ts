@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mapAwesomeDotfiles } from "./awesome-dotfiles";
 import { parseFetchPaste } from "./paste";
-import { parseFetchSpec } from "./fetch-spec";
+import { hydrateFetchSpec, parseFetchSpec } from "./fetch-spec";
 import { canonicalSlug } from "./slug";
 import { deriveTraits } from "./traits";
 
@@ -10,6 +10,31 @@ describe("slug synonyms", () => {
     expect(canonicalSlug("Hyprland")).toBe("hyprland");
     expect(canonicalSlug("arch")).toBe("arch-linux");
     expect(canonicalSlug("KDE Plasma")).toBe("kde-plasma");
+  });
+});
+
+describe("legacy layers hydrate", () => {
+  it("flattens bucket objects from older stored specs", () => {
+    const spec = hydrateFetchSpec({
+      ...parseFetchSpec({
+        specVersion: 1,
+        title: "old",
+        displayName: "ada",
+        handle: "ada",
+        visibility: "public",
+        desktop: { kind: "wm", label: "i3", slug: "i3" },
+        utils: { items: [] },
+        layers: [],
+        sectionOrder: [],
+        tags: [],
+      }),
+      layers: {
+        system: [{ key: "kernel", label: "Kernel", value: "6.12" }],
+        hardware: [{ key: "cpu", label: "CPU", value: "Ryzen" }],
+      },
+    });
+    expect(Array.isArray(spec.layers)).toBe(true);
+    expect(spec.layers.map((l) => l.key)).toEqual(["kernel", "cpu"]);
   });
 });
 
@@ -23,7 +48,7 @@ describe("desktop mapping fixtures", () => {
       visibility: "public",
       desktop: { kind: "de", label: "GNOME", slug: "gnome" },
       utils: { items: [] },
-      layers: {},
+      layers: [],
       sectionOrder: [],
       tags: [],
     });
@@ -36,7 +61,7 @@ describe("desktop mapping fixtures", () => {
       desktop: { kind: "compositor", label: "Hyprland", slug: "hyprland" },
       displayServer: "wayland",
       utils: { items: [] },
-      layers: {},
+      layers: [],
       sectionOrder: [],
       tags: [],
     });
@@ -50,7 +75,7 @@ describe("desktop mapping fixtures", () => {
       compositor: { label: "picom", slug: "picom" },
       displayServer: "x11",
       utils: { items: [] },
-      layers: {},
+      layers: [],
       sectionOrder: [],
       tags: [],
     });
@@ -127,7 +152,7 @@ describe("derived traits", () => {
         displayServer: "x11",
         colorscheme: { label: "pywal", slug: "pywal" },
         utils: { items: [] },
-        layers: {},
+        layers: [],
         sectionOrder: [],
         tags: [],
       }),

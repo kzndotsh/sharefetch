@@ -20,13 +20,11 @@ import { EMBED_THEMES } from "@/lib/embed-query";
 import {
   DESKTOP_KINDS,
   DISPLAY_SERVERS,
-  LAYER_KEYS,
   UTIL_ROLES,
   VISIBILITIES,
   type DesktopKind,
   type FetchSpec,
   type LayerItem,
-  type LayerKey,
   type UtilRole,
   type Visibility,
 } from "@/lib/fetch-spec";
@@ -156,8 +154,8 @@ export function SectionBody({ section, spec, update }: SectionProps & { section:
 
 function TitleSection({ spec, update }: SectionProps) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <div className="sm:col-span-2">
+    <div className="grid gap-3 grid-cols-1 @min-[26rem]:grid-cols-2">
+      <div className="@min-[26rem]:col-span-2">
         <TextField
           id="title"
           label="Title"
@@ -181,7 +179,7 @@ function TitleSection({ spec, update }: SectionProps) {
         placeholder="defaults to handle"
         onChange={(displayName) => update((s) => ({ ...s, displayName }))}
       />
-      <div className="sm:col-span-2">
+      <div className="@min-[26rem]:col-span-2">
         <TextField
           id="headline"
           label="Headline (optional)"
@@ -198,7 +196,7 @@ function DesktopSection({ spec, update }: SectionProps) {
   const kind = spec.desktop.kind;
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 grid-cols-1">
         {DESKTOP_KINDS.map((k) => (
           <button
             key={k}
@@ -208,11 +206,11 @@ function DesktopSection({ spec, update }: SectionProps) {
             aria-pressed={kind === k}
             onClick={() => update((s) => chooseDesktopKind(s, k))}
           >
-            <span className="flex items-center gap-2 text-sm">
+            <span className="flex flex-wrap items-center gap-2 text-sm">
               {KIND_HELP[k].title}
               <KindCue kind={k} />
             </span>
-            <span className="text-xs text-muted">{KIND_HELP[k].body}</span>
+            <span className="text-xs text-muted text-pretty">{KIND_HELP[k].body}</span>
           </button>
         ))}
       </div>
@@ -447,44 +445,41 @@ function UtilsSection({ spec, update }: SectionProps) {
 }
 
 function LayersSection({ spec, update }: SectionProps) {
-  const setLayer = (key: LayerKey, items: LayerItem[]) =>
-    update((s) => ({
-      ...s,
-      layers: { ...s.layers, [key]: items.length ? items : undefined },
-    }));
   return (
-    <div className="flex flex-col gap-4">
-      {LAYER_KEYS.map((key) => (
-        <div key={key} className="flex flex-col gap-1">
-          <span className="label">{key}</span>
-          <RowList<LayerItem>
-            items={spec.layers[key] ?? []}
-            onChange={(items) => setLayer(key, items)}
-            blank={() => ({ key: "", label: "", value: "" })}
-            addLabel={`Add ${key} row`}
-            render={(item, set) => (
-              <>
-                <input
-                  className="field"
-                  value={item.label}
-                  placeholder={key === "hardware" ? "GPU" : "Kernel"}
-                  aria-label={`${key} label`}
-                  onChange={(e) =>
-                    set({ ...item, label: e.target.value, key: item.key || slugify(e.target.value) })
-                  }
-                />
-                <input
-                  className="field"
-                  value={item.value ?? ""}
-                  placeholder={key === "hardware" ? "RX 6700 XT" : "6.12-zen"}
-                  aria-label={`${key} value`}
-                  onChange={(e) => set({ ...item, value: e.target.value })}
-                />
-              </>
-            )}
-          />
-        </div>
-      ))}
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted">
+        Freeform rows on the live card. Label + value; empty rows stay hidden.
+      </p>
+      <RowList<LayerItem>
+        items={spec.layers}
+        onChange={(layers) => update((s) => ({ ...s, layers }))}
+        blank={() => ({ key: "", label: "", value: "" })}
+        addLabel="Add row"
+        render={(item, set) => (
+          <>
+            <input
+              className="field"
+              value={item.label}
+              placeholder="Kernel"
+              aria-label="Detail label"
+              onChange={(e) =>
+                set({
+                  ...item,
+                  label: e.target.value,
+                  key: item.key || slugify(e.target.value),
+                })
+              }
+            />
+            <input
+              className="field"
+              value={item.value ?? ""}
+              placeholder="6.12-zen"
+              aria-label="Detail value"
+              onChange={(e) => set({ ...item, value: e.target.value })}
+            />
+          </>
+        )}
+      />
     </div>
   );
 }

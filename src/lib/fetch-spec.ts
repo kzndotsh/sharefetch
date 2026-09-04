@@ -26,7 +26,7 @@ export type UtilRole = (typeof UTIL_ROLES)[number];
 export const SOURCE_KINDS = ["manual", "paste", "json", "cli", "import"] as const;
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
-export const LAYER_KEYS = [
+const LEGACY_LAYER_BUCKETS = [
   "system",
   "desktop",
   "shell",
@@ -34,7 +34,6 @@ export const LAYER_KEYS = [
   "toolchain",
   "aesthetic",
 ] as const;
-export type LayerKey = (typeof LAYER_KEYS)[number];
 
 const labeledSchema = z.object({
   label: z.string().min(1),
@@ -54,6 +53,40 @@ export const layerItemSchema = z.object({
 });
 
 export const layerItemsSchema = z.array(layerItemSchema);
+
+/** Accept flat arrays or legacy bucket objects from older specs. */
+export function coerceLayers(input: unknown): LayerItem[] {
+  if (input == null) {
+    return [];
+  }
+  if (Array.isArray(input)) {
+    return input.flatMap((item) => {
+      const parsed = layerItemSchema.safeParse(item);
+      return parsed.success ? [parsed.data] : [];
+    });
+  }
+  if (typeof input !== "object") {
+    return [];
+  }
+  const obj = input as Record<string, unknown>;
+  const out: LayerItem[] = [];
+  for (const bucket of LEGACY_LAYER_BUCKETS) {
+    const items = obj[bucket];
+    if (!Array.isArray(items)) {
+      continue;
+    }
+    for (const item of items) {
+      const parsed = layerItemSchema.safeParse(item);
+      if (parsed.success) {
+        out.push(parsed.data);
+      }
+    }
+  }
+  return out;
+}
+
+export type LayerItem = z.infer<typeof layerItemSchema>;
+export type UtilItem = z.infer<typeof utilItemSchema>;
 
 export const fetchSpecSchema = z.looseObject({
   specVersion: z.literal(1),
@@ -85,14 +118,7 @@ export const fetchSpecSchema = z.looseObject({
       }),
     )
     .optional(),
-  layers: z.object({
-    system: layerItemsSchema.optional(),
-    desktop: layerItemsSchema.optional(),
-    shell: layerItemsSchema.optional(),
-    hardware: layerItemsSchema.optional(),
-    toolchain: layerItemsSchema.optional(),
-    aesthetic: layerItemsSchema.optional(),
-  }),
+  layers: z.preprocess(coerceLayers, layerItemsSchema),
   sectionOrder: z.array(z.string()),
   tags: z.array(z.string()),
   colors: z
@@ -124,10 +150,10 @@ export type PublishedFetchSpec = z.infer<typeof fetchSpecSchema>;
 export type FetchSpec = {
   [K in keyof PublishedFetchSpec]: K extends "desktop"
     ? { kind?: DesktopKind; label: string; slug: string }
-    : PublishedFetchSpec[K];
+    : K extends "layers"
+      ? LayerItem[]
+      : PublishedFetchSpec[K];
 };
-export type LayerItem = z.infer<typeof layerItemSchema>;
-export type UtilItem = z.infer<typeof utilItemSchema>;
 
 export const DEFAULT_SECTION_ORDER = [
   "title",
@@ -154,7 +180,7 @@ export function emptyFetchSpec(): FetchSpec {
     visibility: "public",
     desktop: { label: "", slug: "" },
     utils: { items: [] },
-    layers: {},
+    layers: [],
     sectionOrder: [...DEFAULT_SECTION_ORDER],
     tags: [],
     source: { kind: "manual" },
@@ -167,6 +193,18 @@ export function parseFetchSpec(input: unknown): PublishedFetchSpec {
 
 export function safeParseFetchSpec(input: unknown) {
   return fetchSpecSchema.safeParse(input);
+}
+
+/** Normalize a stored or in-memory spec (e.g. legacy layered buckets → flat array). */
+export function hydrateFetchSpec(input: unknown): FetchSpec {
+  if (!input || typeof input !== "object") {
+    return emptyFetchSpec();
+  }
+  const raw = input as FetchSpec & { layers?: unknown };
+  return {
+    ...raw,
+    layers: coerceLayers(raw.layers),
+  };
 }
 
 export function fetchSpecJsonSchema() {

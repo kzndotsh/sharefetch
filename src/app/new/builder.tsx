@@ -8,16 +8,16 @@ import {
   applyPreset,
   applySpecUpdate,
   BUILDER_PRESETS,
-  clearClaimSlot,
   clearDraft,
+  clearSection,
   forkSpec,
-  isClaimSection,
   normalizeSectionOrder,
   parseDraftSpec,
   prepareForPublish,
   publishIssues,
   readDraft,
   SECTION_LABELS,
+  sectionHasClearable,
   wouldClobberSectionOrder,
   writeDraft,
   type SectionKey,
@@ -34,7 +34,6 @@ import {
 import { EMBED_THEMES, type EmbedQuery } from "@/lib/embed-query";
 import { embedMarkdown } from "@/lib/embed-snippet";
 import {
-  desktopKindCue,
   emptyFetchSpec,
   type FetchSpec,
 } from "@/lib/fetch-spec";
@@ -51,26 +50,14 @@ import { SectionBody, type Update } from "./sections";
 
 type Pane = "preview" | "json";
 type MobileTab = "build" | "card";
-type ShareView = "claim" | "full";
+type ShareView = "link" | "markdown";
 type Status = { tone: "info" | "error"; text: string } | null;
 type Loaded = { id?: string; spec: FetchSpec };
 type Initial = { loaded: Loaded; status: Status };
-type ClaimChip = {
-  slot: "kind" | "desktop" | "distro" | "display";
-  section: SectionKey;
-  label: string;
-};
 
 const CLOBBER_PROMPT =
   "You reordered sections. Importing will reset the section order. Continue?";
 const CLAIM_URL_DEBOUNCE_MS = 280;
-const RAIL_SECTIONS: SectionKey[] = [
-  "title",
-  "desktop",
-  "displayServer",
-  "distro",
-  "utils",
-];
 
 function previewQuery(spec: FetchSpec): EmbedQuery {
   return {
@@ -97,62 +84,44 @@ function isCompatBannerSection(
 function sectionDone(spec: FetchSpec, section: SectionKey): boolean {
   switch (section) {
     case "title":
-      return spec.title.trim().length > 0;
+      return spec.title.trim().length > 0 && spec.handle.trim().length > 0;
     case "desktop":
-      return Boolean(spec.desktop.kind);
+      return Boolean(spec.desktop.kind && (spec.desktop.slug || spec.desktop.label));
     case "displayServer":
       return Boolean(spec.displayServer);
+    case "detail":
+      return Boolean(spec.wm || spec.de || spec.compositor);
     case "distro":
       return Boolean(spec.distro);
+    case "colorscheme":
+      return Boolean(spec.colorscheme);
     case "utils":
       return spec.utils.items.length > 0;
-    case "colorscheme":
-    case "detail":
     case "layers":
+      return spec.layers.some(
+        (item) => item.label.trim() || (item.value ?? "").trim(),
+      );
     case "colors":
+      return Boolean(
+        spec.theme ||
+          spec.colors?.background ||
+          spec.colors?.foreground ||
+          spec.colors?.accent ||
+          spec.colors?.muted,
+      );
     case "decisions":
+      return Boolean(spec.decisions?.length);
     case "visibility":
+      return true;
     case "dotfilesUrl":
+      return Boolean(spec.dotfilesUrl?.trim());
     case "screenshots":
-      return false;
+      return Boolean(spec.screenshots?.length);
     default: {
       const _never: never = section;
       return _never;
     }
   }
-}
-
-function claimChips(spec: FetchSpec): ClaimChip[] {
-  const chips: ClaimChip[] = [];
-  if (spec.desktop.kind) {
-    chips.push({
-      slot: "kind",
-      section: "desktop",
-      label: desktopKindCue(spec.desktop.kind),
-    });
-  }
-  if (spec.desktop.slug || spec.desktop.label) {
-    chips.push({
-      slot: "desktop",
-      section: "desktop",
-      label: spec.desktop.label || spec.desktop.slug,
-    });
-  }
-  if (spec.distro) {
-    chips.push({
-      slot: "distro",
-      section: "distro",
-      label: spec.distro.label,
-    });
-  }
-  if (spec.displayServer) {
-    chips.push({
-      slot: "display",
-      section: "displayServer",
-      label: spec.displayServer,
-    });
-  }
-  return chips;
 }
 
 function resolveInitial(editId: string | undefined, existing: Loaded | null): Initial {
@@ -185,17 +154,6 @@ function resolveInitial(editId: string | undefined, existing: Loaded | null): In
   };
 }
 
-function scrollToSection(section: SectionKey) {
-  const el = document.getElementById(`section-${section}`);
-  el?.scrollIntoView({ behavior: "smooth", block: "start" });
-  if (section !== "title" && section !== "desktop" && section !== "distro") {
-    const details = el?.closest("details");
-    if (details && !details.open) {
-      details.open = true;
-    }
-  }
-}
-
 export function Builder({
   editId,
   existing,
@@ -209,13 +167,16 @@ export function Builder({
   const [draftReady, setDraftReady] = useState(false);
   const [pane, setPane] = useState<Pane>("preview");
   const [mobileTab, setMobileTab] = useState<MobileTab>("build");
-  const [shareView, setShareView] = useState<ShareView>("claim");
+  const [shareView, setShareView] = useState<ShareView>("link");
   const [shareOpen, setShareOpen] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [jsonDraft, setJsonDraft] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [stackCollapsed, setStackCollapsed] = useState(false);
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
+  const [activeSection, setActiveSection] = useState<SectionKey>("title");
   const fileInput = useRef<HTMLInputElement>(null);
   const shareDialog = useRef<HTMLDialogElement>(null);
   const { copied: shareCopied, copy: copyShare } = useClipboardFlash();
@@ -276,7 +237,6 @@ export function Builder({
   const specJson = useMemo(() => JSON.stringify(spec, null, 2), [spec]);
   const jsonText = jsonDraft ?? specJson;
   const setJsonText = (text: string) => setJsonDraft(text === specJson ? null : text);
-  const chips = claimChips(spec);
   const sharePath = builderSharePath(spec);
   const shareAbsolute = draftReady
     ? builderShareUrl(window.location.origin, spec)
@@ -284,8 +244,8 @@ export function Builder({
   const shareMarkdown = draftReady
     ? builderShareMarkdown(window.location.origin, spec)
     : builderShareMarkdown("", spec);
-  const shareDisplay = shareView === "claim" ? sharePath : shareMarkdown;
-  const shareCopyText = shareView === "claim" ? shareAbsolute : shareMarkdown;
+  const shareDisplay = shareView === "link" ? sharePath : shareMarkdown;
+  const shareCopyText = shareView === "link" ? shareAbsolute : shareMarkdown;
   const embedText =
     loaded.id && draftReady
       ? embedMarkdown(window.location.origin, loaded.id, previewQuery(spec).theme, new Date())
@@ -443,105 +403,80 @@ export function Builder({
   };
 
   const order = normalizeSectionOrder(spec.sectionOrder);
-  const claimOrder = order.filter(isClaimSection);
-  const moreOrder = order.filter((section) => !isClaimSection(section));
+  const activeIndex = Math.max(0, order.indexOf(activeSection));
+  const inspectSection = order.includes(activeSection)
+    ? activeSection
+    : (order[0] ?? "title");
+
+  const selectSection = (section: SectionKey) => {
+    setMobileTab("build");
+    if (inspectorCollapsed) {
+      setInspectorCollapsed(false);
+    }
+    setActiveSection(section);
+  };
 
   const liveCard = (
-    <aside className="flex flex-col gap-3">
-      <div className="flex items-center justify-between chrome text-xs">
-        <span className="text-muted tracking-[0.12em] uppercase">live card</span>
-        <span className="flex gap-1">
-          <PaneButton active={pane === "preview"} onClick={() => setPane("preview")}>
-            preview
-          </PaneButton>
-          <PaneButton active={pane === "json"} onClick={() => setPane("json")}>
-            raw JSON
-          </PaneButton>
-        </span>
-      </div>
-
-      {chips.length ? (
-        <div className="flex flex-wrap gap-1.5" aria-label="Claim summary">
-          {chips.map((chip) => (
-            <span
-              key={`${chip.slot}-${chip.label}`}
-              className="chip inline-flex items-center gap-1 pr-1"
-              data-active="true"
-            >
-              <button
-                type="button"
-                className="chrome text-xs hover:text-accent"
-                onClick={() => {
-                  setMobileTab("build");
-                  scrollToSection(chip.section);
-                }}
-              >
-                {chip.label}
-              </button>
-              <button
-                type="button"
-                className="text-muted hover:text-accent px-1"
-                aria-label={`Clear ${chip.slot}`}
-                onClick={() =>
-                  update((s) => clearClaimSlot(s, chip.slot))
-                }
-              >
-                ×
-              </button>
-            </span>
-          ))}
+    <aside className="flex flex-col gap-3 w-full max-w-xl mx-auto">
+      <div className="printout p-3 flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="chrome text-xs tracking-[0.12em] uppercase text-muted">
+            Live card
+          </p>
+          <span className="flex gap-1">
+            <PaneButton active={pane === "preview"} onClick={() => setPane("preview")}>
+              Preview
+            </PaneButton>
+            <PaneButton active={pane === "json"} onClick={() => setPane("json")}>
+              Raw JSON
+            </PaneButton>
+          </span>
         </div>
-      ) : (
-        <p className="chrome text-xs text-muted">No claim chips yet — pick a desktop kind.</p>
-      )}
 
-      {pane === "preview" ? (
-        <figure className="printout p-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={svgDataUrl(svg)}
-            alt="Live preview of the fetch card"
-            width={520}
-            height={268}
-            className="w-full h-auto"
-          />
-          <figcaption className="text-xs text-muted pt-2">
-            Rendered in your browser with the same renderer the embed route uses.
-            Publishing stamps the verified date.
-          </figcaption>
-        </figure>
-      ) : (
-        <div className="printout p-3 flex flex-col gap-2">
-          <label className="label" htmlFor="json-pane">
-            FetchSpec JSON
-          </label>
-          <textarea
-            id="json-pane"
-            className="field min-h-[28rem] font-mono text-xs"
-            value={jsonText}
-            spellCheck={false}
-            onChange={(e) => setJsonText(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="btn"
-              onClick={applyJsonPane}
-              disabled={jsonText === specJson}
-            >
-              Apply JSON
-            </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => setJsonText(specJson)}
-              disabled={jsonText === specJson}
-            >
-              Reset
-            </button>
+        {pane === "preview" ? (
+          <figure>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={svgDataUrl(svg)}
+              alt="Live preview of the fetch card"
+              width={520}
+              height={268}
+              className="w-full h-auto"
+            />
+          </figure>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <label className="label" htmlFor="json-pane">
+              FetchSpec JSON
+            </label>
+            <textarea
+              id="json-pane"
+              className="field min-h-[28rem] font-mono text-xs"
+              value={jsonText}
+              spellCheck={false}
+              onChange={(e) => setJsonText(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="btn"
+                onClick={applyJsonPane}
+                disabled={jsonText === specJson}
+              >
+                Apply JSON
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setJsonText(specJson)}
+                disabled={jsonText === specJson}
+              >
+                Reset
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="printout p-3 flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
@@ -551,16 +486,16 @@ export function Builder({
             </p>
             <span className="flex gap-1">
               <PaneButton
-                active={shareView === "claim"}
-                onClick={() => setShareView("claim")}
+                active={shareView === "link"}
+                onClick={() => setShareView("link")}
               >
-                Claim
+                Link
               </PaneButton>
               <PaneButton
-                active={shareView === "full"}
-                onClick={() => setShareView("full")}
+                active={shareView === "markdown"}
+                onClick={() => setShareView("markdown")}
               >
-                Full
+                Markdown
               </PaneButton>
             </span>
           </div>
@@ -653,91 +588,177 @@ export function Builder({
     </aside>
   );
 
-  const form = (
-    <div className="flex flex-col gap-6 min-w-0">
-      <SectionProgressRail
-        spec={spec}
-        onJump={(section) => {
-          setMobileTab("build");
-          scrollToSection(section);
-        }}
-      />
-      <ol className="flex flex-col gap-6">
-        {claimOrder.map((section, index) => (
-          <SectionCard
-            key={section}
-            section={section}
-            index={index}
-            spec={spec}
-            update={update}
-            banners={
-              isCompatBannerSection(section)
-                ? notesForSection(compatNotes, section)
-                : []
-            }
-          />
-        ))}
-      </ol>
-      <details>
-        <summary className="chrome text-xs tracking-[0.12em] uppercase text-muted cursor-pointer">
-          More on this stack
-        </summary>
-        <p className="text-xs text-muted mt-2 mb-4">
-          Colorscheme, utils, layers, visibility, and the rest. Optional for a first publish.
+  const inspectPanel = (
+    <div className="@container flex flex-col gap-4 min-w-0">
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
+        <h2 className="chrome text-xs tracking-[0.12em] uppercase text-muted flex items-center gap-2 min-w-0">
+          <span className="text-accent shrink-0" aria-hidden="true">
+            {String(activeIndex + 1).padStart(2, "0")}
+          </span>
+          <span className="truncate">{SECTION_LABELS[inspectSection]}</span>
+        </h2>
+        {sectionHasClearable(spec, inspectSection) ? (
+          <button
+            type="button"
+            className="chrome shrink-0 text-[10px] tracking-[0.12em] uppercase text-muted hover:text-accent px-1"
+            aria-label={`Clear ${SECTION_LABELS[inspectSection]}`}
+            onClick={() => update((s) => clearSection(s, inspectSection))}
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
+      {isCompatBannerSection(inspectSection) &&
+      notesForSection(compatNotes, inspectSection).length ? (
+        <p className="text-xs text-muted border border-border px-2 py-1.5">
+          {notesForSection(compatNotes, inspectSection).join(" · ")}
         </p>
-        <ol className="flex flex-col gap-6">
-          {moreOrder.map((section, index) => (
-            <SectionCard
+      ) : null}
+      <SectionBody section={inspectSection} spec={spec} update={update} />
+    </div>
+  );
+
+  const stackNav = (collapsed: boolean) =>
+    collapsed ? (
+      <div className="flex flex-col items-center gap-2 py-3 px-1 overflow-y-auto">
+        {order.map((section) => {
+          const done = sectionDone(spec, section);
+          const active = section === inspectSection;
+          return (
+            <button
               key={section}
-              section={section}
-              index={claimOrder.length + index}
-              spec={spec}
-              update={update}
-              banners={
-                isCompatBannerSection(section)
-                  ? notesForSection(compatNotes, section)
-                  : []
-              }
-              reorder={{
-                up: index > 0,
-                down: index < moreOrder.length - 1,
-                onMove: (delta) => {
-                  const target = moreOrder[index + delta];
-                  if (!target) {
-                    return;
-                  }
-                  update((s) => {
-                    const full = normalizeSectionOrder(s.sectionOrder);
-                    const a = full.indexOf(section);
-                    const b = full.indexOf(target);
-                    const next = [...full];
-                    next[a] = target;
-                    next[b] = section;
-                    return { ...s, sectionOrder: next };
-                  });
-                },
-              }}
+              type="button"
+              title={SECTION_LABELS[section]}
+              aria-label={SECTION_LABELS[section]}
+              aria-current={active ? "true" : undefined}
+              className={`h-2 w-2 shrink-0 border ${
+                active
+                  ? "bg-accent border-accent"
+                  : done
+                    ? "bg-muted border-border"
+                    : "bg-transparent border-border"
+              }`}
+              onClick={() => selectSection(section)}
             />
-          ))}
-        </ol>
-      </details>
+          );
+        })}
+      </div>
+    ) : (
+      <nav className="flex flex-col gap-0.5 p-2 overflow-y-auto" aria-label="Stack sections">
+        {order.map((section, index) => {
+          const done = sectionDone(spec, section);
+          const active = section === inspectSection;
+          return (
+            <button
+              key={section}
+              type="button"
+              aria-current={active ? "true" : undefined}
+              onClick={() => selectSection(section)}
+              className={`chrome w-full flex items-center gap-2 border px-2 py-1.5 text-left text-[10px] tracking-[0.1em] uppercase transition-colors ${
+                active
+                  ? "border-accent text-accent bg-bg"
+                  : done
+                    ? "border-transparent text-fg hover:border-border"
+                    : "border-transparent text-muted hover:border-border hover:text-fg"
+              }`}
+            >
+              <span className="text-accent/80 tabular-nums shrink-0" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="truncate">{SECTION_LABELS[section]}</span>
+              <span
+                aria-hidden="true"
+                className={`ml-auto h-1 w-1 shrink-0 ${done ? "bg-accent" : "bg-border"}`}
+              />
+            </button>
+          );
+        })}
+      </nav>
+    );
+
+  const importExportActions = (
+    <div className="grid grid-cols-2 gap-2">
+      <button
+        type="button"
+        className="btn w-full justify-center"
+        onClick={() => fileInput.current?.click()}
+      >
+        Import JSON
+      </button>
+      <button type="button" className="btn w-full justify-center" onClick={exportJson}>
+        Export JSON
+      </button>
+      <CopyButton text={specJson} label="Copy JSON" className="btn w-full justify-center" />
+      <button
+        type="button"
+        className="btn w-full justify-center"
+        onClick={() => {
+          const result = applySpecUpdate(spec, () => forkSpec(spec));
+          setLoaded({ spec: result.spec });
+          setJsonDraft(null);
+          setStatus({
+            tone: "info",
+            text: "Forked. Set a new handle and publish as your own.",
+          });
+          window.history.replaceState(null, "", "/new");
+        }}
+      >
+        Fork
+      </button>
+      <button
+        type="button"
+        className="btn w-full justify-center col-span-2"
+        onClick={startFresh}
+      >
+        New draft
+      </button>
     </div>
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex flex-col gap-1 min-w-0">
+    <div className="builder-studio flex flex-col gap-0 min-h-[calc(100vh-3rem)]">
+      <input
+        ref={fileInput}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            importJsonFile(file);
+          }
+          e.target.value = "";
+        }}
+      />
+      <header className="shrink-0 border-b border-border px-5 py-3 flex flex-col gap-2">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex flex-col gap-0.5 min-w-0">
             <p className="chrome text-xs tracking-[0.18em] uppercase text-muted">
               {loaded.id ? `editing ${loaded.id}` : "new fetch"}
               {draftReady ? " · draft saved locally" : ""}
             </p>
-            <h1 className="text-2xl font-medium truncate">
+            <h1 className="text-xl font-medium truncate">
               {spec.title || "Untitled fetch"}
             </h1>
           </div>
-          <div className="flex flex-wrap gap-2 chrome">
+          <div className="flex flex-wrap gap-2 chrome items-center">
+            <details className="relative">
+              <summary className="btn cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                Presets
+              </summary>
+              <div className="absolute right-0 top-full z-20 mt-1 min-w-48 border border-border bg-paper p-2 flex flex-col gap-1 shadow-lg">
+                {BUILDER_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className="chip !min-h-8 w-full justify-start text-left"
+                    onClick={() => applyBuilderPreset(preset.id)}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </details>
             <button
               type="button"
               className="btn"
@@ -745,7 +766,7 @@ export function Builder({
               aria-controls="paste-panel"
               onClick={() => setPasteOpen((v) => !v)}
             >
-              Paste fastfetch
+              Paste config
             </button>
             <button
               type="button"
@@ -757,79 +778,25 @@ export function Builder({
             </button>
           </div>
         </div>
-        <p className="chrome text-xs text-muted max-w-prose">
-          Title, handle, and a named desktop are enough to publish. This browser
-          cookie owns the fetch until you sign in.
+        <p className="chrome text-xs text-muted max-w-prose lg:hidden">
+          Title, handle, and a named desktop are enough to publish.
         </p>
-        <div className="flex flex-wrap gap-2 chrome">
-          {BUILDER_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              className="btn"
-              onClick={() => applyBuilderPreset(preset.id)}
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-        <details className="chrome text-sm">
-          <summary className="cursor-pointer text-muted">Import, export, copy</summary>
-          <div className="flex flex-wrap gap-2 pt-2">
-            <button type="button" className="btn" onClick={() => fileInput.current?.click()}>
-              Import JSON
-            </button>
-            <input
-              ref={fileInput}
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  importJsonFile(file);
-                }
-                e.target.value = "";
-              }}
-            />
-            <button type="button" className="btn" onClick={exportJson}>
-              Export JSON
-            </button>
-            <CopyButton text={specJson} label="Copy JSON" />
-            <button
-              type="button"
-              className="btn"
-              onClick={() => {
-                const result = applySpecUpdate(spec, () => forkSpec(spec));
-                setLoaded({ spec: result.spec });
-                setJsonDraft(null);
-                setStatus({
-                  tone: "info",
-                  text: "Forked. Set a new handle and publish as your own.",
-                });
-                window.history.replaceState(null, "", "/new");
-              }}
-            >
-              Copy stack
-            </button>
-            <button type="button" className="btn" onClick={startFresh}>
-              New draft
-            </button>
-          </div>
-        </details>
       </header>
 
       {status ? (
         <p
           role="status"
-          className={`text-xs border px-3 py-2 ${status.tone === "error" ? "border-accent text-accent" : "border-border text-muted"}`}
+          className={`shrink-0 text-xs border-b px-5 py-2 ${status.tone === "error" ? "border-accent text-accent" : "border-border text-muted"}`}
         >
           {status.text}
         </p>
       ) : null}
 
       {pasteOpen ? (
-        <div id="paste-panel" className="printout p-3 flex flex-col gap-2">
+        <div
+          id="paste-panel"
+          className="shrink-0 border-b border-border px-5 py-3 flex flex-col gap-2 bg-paper"
+        >
           <label className="label" htmlFor="paste">
             Paste fastfetch or neofetch output
           </label>
@@ -843,7 +810,7 @@ export function Builder({
           </div>
           <textarea
             id="paste"
-            className="field min-h-40 font-mono text-xs"
+            className="field min-h-32 font-mono text-xs max-w-3xl"
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
             placeholder={
@@ -866,7 +833,7 @@ export function Builder({
         </div>
       ) : null}
 
-      <div className="sticky top-0 z-10 -mx-1 px-1 py-2 bg-bg border-b border-border sm:hidden">
+      <div className="sticky top-0 z-10 px-5 py-2 bg-bg border-b border-border lg:hidden">
         <div className="flex gap-4 chrome text-xs tracking-[0.12em] uppercase">
           <PaneButton
             active={mobileTab === "build"}
@@ -883,187 +850,93 @@ export function Builder({
         </div>
       </div>
 
-      <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_minmax(0,34rem)] lg:items-start">
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
+        <aside
+          className={`hidden lg:flex shrink-0 flex-col border-r border-border bg-paper ${
+            stackCollapsed ? "w-12" : "w-52"
+          }`}
+          aria-label="Stack rail"
+        >
+          <div className="flex items-center justify-between gap-1 border-b border-border px-2 py-2 shrink-0">
+            {!stackCollapsed ? (
+              <span className="chrome text-[10px] tracking-[0.12em] uppercase text-muted px-1">
+                Stack
+              </span>
+            ) : (
+              <span className="sr-only">Stack</span>
+            )}
+            <button
+              type="button"
+              className="chip !min-h-8 !px-2"
+              aria-expanded={!stackCollapsed}
+              aria-label={stackCollapsed ? "Expand stack rail" : "Collapse stack rail"}
+              onClick={() => setStackCollapsed((v) => !v)}
+            >
+              {stackCollapsed ? "»" : "«"}
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto">{stackNav(stackCollapsed)}</div>
+          {!stackCollapsed ? (
+            <div className="border-t border-border p-2 shrink-0">{importExportActions}</div>
+          ) : null}
+        </aside>
+
+        <aside
+          className={`min-w-0 border-border bg-bg ${
+            mobileTab === "build" ? "flex" : "hidden"
+          } lg:flex flex-col shrink-0 lg:border-r ${
+            inspectorCollapsed ? "lg:w-12" : "w-full lg:w-[min(32rem,38vw)] lg:min-w-[28rem]"
+          }`}
+          aria-label="Inspector"
+        >
+          <div className="hidden lg:flex items-center justify-between gap-1 border-b border-border px-2 py-2 shrink-0">
+            {!inspectorCollapsed ? (
+              <span className="chrome text-[10px] tracking-[0.12em] uppercase text-muted px-1">
+                Inspect
+              </span>
+            ) : (
+              <span className="sr-only">Inspect</span>
+            )}
+            <button
+              type="button"
+              className="chip !min-h-8 !px-2"
+              aria-expanded={!inspectorCollapsed}
+              aria-label={
+                inspectorCollapsed ? "Expand inspector" : "Collapse inspector"
+              }
+              onClick={() => setInspectorCollapsed((v) => !v)}
+            >
+              {inspectorCollapsed ? "»" : "«"}
+            </button>
+          </div>
+          {inspectorCollapsed ? (
+            <button
+              type="button"
+              className="hidden lg:flex flex-1 items-start justify-center pt-4 chrome text-[10px] tracking-[0.18em] uppercase text-muted [writing-mode:vertical-rl] rotate-180"
+              onClick={() => setInspectorCollapsed(false)}
+            >
+              Inspect
+            </button>
+          ) : (
+            <div className="flex flex-col gap-4 min-w-0 overflow-y-auto overflow-x-hidden px-5 py-4 lg:px-4 lg:max-h-[calc(100vh-7rem)]">
+              <div className="lg:hidden flex flex-col gap-3">
+                {stackNav(false)}
+                {importExportActions}
+              </div>
+              <div className="printout p-4 bg-bg min-w-0">{inspectPanel}</div>
+            </div>
+          )}
+        </aside>
+
         <div
-          className={`order-first lg:order-none lg:sticky lg:top-6 ${
+          className={`studio-canvas flex-1 min-w-0 ${
             mobileTab === "card" ? "block" : "hidden"
-          } sm:block`}
+          } lg:block overflow-y-auto px-5 py-6 lg:px-8 lg:py-8`}
         >
           {liveCard}
         </div>
-        <div className={`${mobileTab === "build" ? "block" : "hidden"} sm:block`}>
-          {form}
-        </div>
       </div>
     </div>
-  );
-}
-
-function SectionCard({
-  section,
-  index,
-  spec,
-  update,
-  reorder,
-  banners = [],
-}: {
-  section: SectionKey;
-  index: number;
-  spec: FetchSpec;
-  update: Update;
-  reorder?: { up: boolean; down: boolean; onMove: (delta: -1 | 1) => void };
-  banners?: string[];
-}) {
-  return (
-    <li id={`section-${section}`} className="printout p-4 flex flex-col gap-3 scroll-mt-20">
-      <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
-        <h2 className="chrome text-xs tracking-[0.12em] uppercase text-muted">
-          <span className="text-accent mr-2" aria-hidden="true">
-            {String(index + 1).padStart(2, "0")}
-          </span>
-          {SECTION_LABELS[section]}
-        </h2>
-        {reorder ? (
-          <span className="flex gap-1">
-            <ReorderButton
-              disabled={!reorder.up}
-              label="Move section up"
-              onClick={() => reorder.onMove(-1)}
-            >
-              up
-            </ReorderButton>
-            <ReorderButton
-              disabled={!reorder.down}
-              label="Move section down"
-              onClick={() => reorder.onMove(1)}
-            >
-              down
-            </ReorderButton>
-          </span>
-        ) : null}
-      </div>
-      {banners.length ? (
-        <p className="text-xs text-muted border border-border px-2 py-1.5">
-          {banners.join(" · ")}
-        </p>
-      ) : null}
-      <SectionBody section={section} spec={spec} update={update} />
-    </li>
-  );
-}
-
-function SectionProgressRail({
-  spec,
-  onJump,
-}: {
-  spec: FetchSpec;
-  onJump: (section: SectionKey) => void;
-}) {
-  const [active, setActive] = useState<SectionKey>(RAIL_SECTIONS[0]);
-  const railRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const sections = RAIL_SECTIONS.map((section) =>
-      document.getElementById(`section-${section}`),
-    ).filter((el): el is HTMLElement => Boolean(el));
-    if (!sections.length) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        const top = visible[0]?.target.id.replace(/^section-/, "");
-        if (top && RAIL_SECTIONS.includes(top as SectionKey)) {
-          setActive(top as SectionKey);
-        }
-      },
-      { rootMargin: "-20% 0px -55% 0px", threshold: [0.1, 0.35, 0.6] },
-    );
-
-    for (const section of sections) {
-      observer.observe(section);
-    }
-    return () => observer.disconnect();
-  }, [spec.sectionOrder]);
-
-  useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) {
-      return;
-    }
-    const chip = rail.querySelector<HTMLElement>(`[data-section="${active}"]`);
-    if (!chip) {
-      return;
-    }
-    const railRect = rail.getBoundingClientRect();
-    const chipRect = chip.getBoundingClientRect();
-    if (chipRect.left < railRect.left) {
-      rail.scrollBy({ left: chipRect.left - railRect.left - 16, behavior: "smooth" });
-    } else if (chipRect.right > railRect.right) {
-      rail.scrollBy({ left: chipRect.right - railRect.right + 16, behavior: "smooth" });
-    }
-  }, [active]);
-
-  return (
-    <div
-      ref={railRef}
-      className="sticky top-12 sm:top-0 z-[5] -mx-1 px-1 py-2 bg-bg/95 border-b border-border flex items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      aria-label="Section progress"
-    >
-      {RAIL_SECTIONS.map((section) => {
-        const done = sectionDone(spec, section);
-        const isActive = active === section;
-        return (
-          <button
-            key={section}
-            type="button"
-            data-section={section}
-            title={`Jump to ${SECTION_LABELS[section]}`}
-            onClick={() => onJump(section)}
-            className={`chrome shrink-0 inline-flex items-center gap-1.5 border px-2 py-1 text-[10px] tracking-[0.1em] uppercase transition-colors ${
-              isActive
-                ? "border-accent text-accent"
-                : done
-                  ? "border-border text-fg"
-                  : "border-border text-muted"
-            }`}
-          >
-            <span
-              aria-hidden="true"
-              className={`h-1 w-1 shrink-0 ${done ? "bg-accent" : "bg-muted"}`}
-            />
-            {SECTION_LABELS[section]}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function ReorderButton({
-  disabled,
-  label,
-  onClick,
-  children,
-}: {
-  disabled: boolean;
-  label: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      className="chip"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      {children}
-    </button>
   );
 }
 

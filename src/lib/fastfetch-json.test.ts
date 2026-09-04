@@ -25,9 +25,9 @@ describe("parseFastfetchJson", () => {
     expect(spec.utils.items.some((u) => u.slug === "kitty")).toBe(true);
     expect(spec.utils.items.some((u) => u.slug === "zsh")).toBe(true);
     expect(spec.colorscheme?.slug).toBe("tokyo-night");
-    expect(spec.layers.system?.some((l) => l.key === "packages")).toBe(true);
-    expect(spec.layers.desktop?.some((l) => l.key === "display")).toBe(true);
-    expect(spec.layers.aesthetic?.some((l) => l.key === "icons")).toBe(true);
+    expect(spec.layers.some((l) => l.key === "packages")).toBe(true);
+    expect(spec.layers.some((l) => l.key === "display")).toBe(true);
+    expect(spec.layers.some((l) => l.key === "icons")).toBe(true);
     expect(spec.source?.kind).toBe("cli");
   });
 
@@ -70,10 +70,10 @@ Terminal Font: JetBrainsMono Nerd Font 12
     );
     expect(spec.source?.kind).toBe("paste");
     expect(spec.desktop.kind).toBe("compositor");
-    expect(spec.layers.system?.some((l) => l.key === "packages")).toBe(true);
-    expect(spec.layers.desktop?.some((l) => l.key === "display")).toBe(true);
-    expect(spec.layers.aesthetic?.some((l) => l.key === "icons")).toBe(true);
-    expect(spec.layers.aesthetic?.some((l) => l.key === "cursor")).toBe(true);
+    expect(spec.layers.some((l) => l.key === "packages")).toBe(true);
+    expect(spec.layers.some((l) => l.key === "display")).toBe(true);
+    expect(spec.layers.some((l) => l.key === "icons")).toBe(true);
+    expect(spec.layers.some((l) => l.key === "cursor")).toBe(true);
   });
 });
 

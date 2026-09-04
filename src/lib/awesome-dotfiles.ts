@@ -57,7 +57,7 @@ export function mapAwesomeDotfiles(
     utils: { items: asUtils(row.utils_used) },
     dotfilesUrl: row.github_url,
     screenshots,
-    layers: {},
+    layers: [],
     sectionOrder: [...DEFAULT_SECTION_ORDER],
     tags: [],
     source: {

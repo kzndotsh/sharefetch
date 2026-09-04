@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   chooseDesktop,
   chooseDesktopKind,
+  clearSection,
   DRAFT_KEY,
   forkSpec,
   moveSection,
@@ -10,6 +11,7 @@ import {
   publishIssues,
   readDraft,
   SECTION_KEYS,
+  sectionHasClearable,
   toggleUtil,
   wouldClobberSectionOrder,
   writeDraft,
@@ -49,6 +51,32 @@ describe("section order", () => {
     expect(wouldClobberSectionOrder([...DEFAULT_SECTION_ORDER], custom)).toBe(false);
     expect(wouldClobberSectionOrder(custom, [...DEFAULT_SECTION_ORDER])).toBe(true);
     expect(wouldClobberSectionOrder(custom, custom)).toBe(false);
+  });
+});
+
+describe("clear section", () => {
+  it("clears desktop and reports clearable state", () => {
+    let spec = emptyFetchSpec();
+    expect(sectionHasClearable(spec, "desktop")).toBe(false);
+    spec = chooseDesktopKind(spec, "compositor");
+    spec = chooseDesktop(spec, DESKTOP_COMPOSITOR[0]);
+    expect(sectionHasClearable(spec, "desktop")).toBe(true);
+    spec = clearSection(spec, "desktop");
+    expect(spec.desktop.kind).toBeUndefined();
+    expect(spec.desktop.slug).toBe("");
+    expect(sectionHasClearable(spec, "desktop")).toBe(false);
+  });
+
+  it("clears utils and layers", () => {
+    let spec = emptyFetchSpec();
+    spec = toggleUtil(spec, { label: "kitty", slug: "kitty", role: "terminal" });
+    spec = { ...spec, layers: [{ key: "kernel", label: "Kernel", value: "6.12" }] };
+    expect(sectionHasClearable(spec, "utils")).toBe(true);
+    expect(sectionHasClearable(spec, "layers")).toBe(true);
+    spec = clearSection(spec, "utils");
+    spec = clearSection(spec, "layers");
+    expect(spec.utils.items).toEqual([]);
+    expect(spec.layers).toEqual([]);
   });
 });
 

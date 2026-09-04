@@ -4,7 +4,7 @@ import { getDb } from "@/db";
 import { fetchChangelog, fetches, fetchUtils, tools, user } from "@/db/schema";
 import { summarizeMutation } from "@/lib/changelog";
 import type { FetchSpec, PublishedFetchSpec } from "@/lib/fetch-spec";
-import { parseFetchSpec } from "@/lib/fetch-spec";
+import { hydrateFetchSpec, parseFetchSpec } from "@/lib/fetch-spec";
 
 export type ExploreFilters = {
   q?: string;
@@ -16,6 +16,10 @@ export type ExploreFilters = {
   displayServer?: string;
   sort?: "latest" | "random";
 };
+
+function withHydratedSpec<T extends { spec: FetchSpec }>(row: T): T {
+  return { ...row, spec: hydrateFetchSpec(row.spec) };
+}
 
 export function denormalize(spec: PublishedFetchSpec) {
   return {
@@ -84,7 +88,10 @@ export async function upsertFetch(input: {
   await db.insert(fetchChangelog).values({
     id: nanoid(),
     fetchId: id,
-    summary: summarizeMutation(input.previous ?? existing?.spec ?? null, spec),
+    summary: summarizeMutation(
+      input.previous ?? (existing ? hydrateFetchSpec(existing.spec) : null),
+      spec,
+    ),
     createdAt: now,
   });
 
@@ -118,7 +125,7 @@ export async function getPublicFetch(id: string) {
   if (row.visibility === "private") {
     return null;
   }
-  return row;
+  return withHydratedSpec(row);
 }
 
 export async function listExplore(filters: ExploreFilters) {
@@ -166,7 +173,8 @@ export async function listExplore(filters: ExploreFilters) {
     .from(fetches)
     .where(where)
     .orderBy(order)
-    .limit(48);
+    .limit(48)
+    .then((rows) => rows.map(withHydratedSpec));
 }
 
 export async function facetCounts() {
@@ -211,21 +219,23 @@ export async function facetCounts() {
 
 export async function listByHandle(handle: string) {
   const db = getDb();
-  return db
+  const rows = await db
     .select()
     .from(fetches)
     .where(and(eq(fetches.handle, handle), eq(fetches.visibility, "public")))
     .orderBy(desc(fetches.updatedAt));
+  return rows.map(withHydratedSpec);
 }
 
 export async function latestPublic(limit = 8) {
   const db = getDb();
-  return db
+  const rows = await db
     .select()
     .from(fetches)
     .where(eq(fetches.visibility, "public"))
     .orderBy(desc(fetches.lastVerifiedAt))
     .limit(limit);
+  return rows.map(withHydratedSpec);
 }
 
 export async function changelogFor(fetchId: string) {

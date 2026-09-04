@@ -100,8 +100,8 @@ export function LabeledPicker({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-col gap-2 min-w-0">
+      <div className="flex flex-wrap gap-1.5 min-w-0">
         {options.map((option) => (
           <ChipButton
             key={option.slug}
@@ -119,9 +119,9 @@ export function LabeledPicker({
           </ChipButton>
         ) : null}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 min-w-0">
         <input
-          className="field"
+          className="field min-w-0"
           value={custom}
           placeholder={customPlaceholder}
           aria-label={customPlaceholder}

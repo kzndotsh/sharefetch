@@ -25,6 +25,7 @@ describe("svg escape", () => {
     expect(svg).toContain("&lt;script&gt;");
     expect(svg).toContain("DE");
     expect(svg).not.toMatch(/>GNOME<\/text>[\s\S]*WM/);
+    expect(svg).toContain("verified 2026-09-02");
   });
 
   it("omits the desktop row until a kind or name exists", () => {
@@ -33,5 +34,58 @@ describe("svg escape", () => {
     });
     expect(svg).not.toContain("compositor");
     expect(svg).not.toContain(">desktop<");
+  });
+
+  it("shows display name beside handle when they differ", () => {
+    const spec = emptyFetchSpec();
+    spec.handle = "moth";
+    spec.displayName = "Moth";
+    spec.title = "dock";
+    const svg = renderFetchSvg(spec, parseEmbedQuery(new URLSearchParams()), {
+      lastVerifiedAt: null,
+    });
+    expect(svg).toContain("Moth · @moth");
+    expect(svg).toContain("unverified");
+    expect(svg).not.toContain("verified unverified");
+  });
+
+  it("keeps @handle alone when display name matches", () => {
+    const spec = emptyFetchSpec();
+    spec.handle = "moth";
+    spec.displayName = "moth";
+    spec.title = "dock";
+    const svg = renderFetchSvg(spec, parseEmbedQuery(new URLSearchParams()), {
+      lastVerifiedAt: null,
+    });
+    expect(svg).toContain("@moth");
+    expect(svg).not.toContain("· @moth");
+  });
+
+  it("renders filled extra-detail rows on the card", () => {
+    const spec = emptyFetchSpec();
+    spec.title = "dock";
+    spec.handle = "moth";
+    spec.displayName = "moth";
+    spec.layers = [
+      { key: "kernel", label: "Kernel", value: "6.12-zen" },
+    ];
+    const svg = renderFetchSvg(spec, parseEmbedQuery(new URLSearchParams()), {
+      lastVerifiedAt: null,
+    });
+    expect(svg).toContain(">kernel<");
+    expect(svg).toContain(">6.12-zen<");
+    expect(svg).toMatch(/height="\d+"/);
+    const height = Number(/height="(\d+)"/.exec(svg)?.[1] ?? 0);
+    expect(height).toBeGreaterThanOrEqual(200);
+  });
+
+  it("skips blank extra-detail rows", () => {
+    const spec = emptyFetchSpec();
+    spec.title = "dock";
+    spec.layers = [{ key: "", label: "", value: "" }];
+    const svg = renderFetchSvg(spec, parseEmbedQuery(new URLSearchParams()), {
+      lastVerifiedAt: null,
+    });
+    expect(svg).not.toContain(">hardware<");
   });
 });

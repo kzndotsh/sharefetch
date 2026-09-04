@@ -1,10 +1,21 @@
-import { desktopKindCue, type FetchSpec } from "./fetch-spec";
+import {
+  desktopKindCue,
+  type FetchSpec,
+} from "./fetch-spec";
 import {
   hiddenSet,
   THEME_MAP,
   type EmbedQuery,
   type EmbedTheme,
 } from "./embed-query";
+
+const ROW_STEP = 28;
+const BODY_TOP = 78;
+const FOOTER_PAD = 36;
+const MAX_LINES_FULL = 10;
+const MAX_LINES_COMPACT = 4;
+const KEY_MAX = 14;
+const VALUE_MAX = 42;
 
 export function escapeXml(value: string): string {
   return value
@@ -13,6 +24,14 @@ export function escapeXml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
+}
+
+function truncate(value: string, max: number): string {
+  const trimmed = value.trim();
+  if (trimmed.length <= max) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, Math.max(0, max - 1))}…`;
 }
 
 function text(
@@ -52,16 +71,23 @@ export function renderFetchSvg(
   const hide = hiddenSet(query.hide);
   const compact = query.layout === "compact";
   const width = 520;
-  const height = compact ? 168 : 268;
   const utils = spec.utils.items
     .slice(0, compact ? 4 : 8)
     .map((u) => u.label)
     .join(" · ");
   const kindCue = spec.desktop.kind ? desktopKindCue(spec.desktop.kind) : "";
   const desktopLine = [spec.desktop.label, kindCue].filter(Boolean).join("  ");
-  const verified = meta.lastVerifiedAt
-    ? new Date(meta.lastVerifiedAt).toISOString().slice(0, 10)
+  const verifiedLabel = meta.lastVerifiedAt
+    ? `verified ${new Date(meta.lastVerifiedAt).toISOString().slice(0, 10)}`
     : "unverified";
+  const handle = spec.handle.trim();
+  const displayName = spec.displayName.trim();
+  const byline =
+    displayName && displayName !== handle
+      ? `${displayName} · @${handle}`
+      : handle
+        ? `@${handle}`
+        : "";
 
   const lines: { key: string; value: string; id: string }[] = [];
   if (!hide.has("desktop") && desktopLine) {
@@ -87,14 +113,37 @@ export function renderFetchSvg(
       id: "display",
     });
   }
+  if (!hide.has("layers")) {
+    for (const item of spec.layers) {
+      const label = item.label.trim();
+      const value = (item.value ?? "").trim();
+      if (!label && !value) {
+        continue;
+      }
+      lines.push({
+        key: truncate(label || "detail", KEY_MAX).toLowerCase(),
+        value: truncate(value || label, VALUE_MAX),
+        id: `layer-${item.key || label || value}`,
+      });
+    }
+  }
 
-  const body = lines
-    .map((line, i) => row(78 + i * 28, line.key, line.value, theme, width))
+  const maxLines = compact ? MAX_LINES_COMPACT : MAX_LINES_FULL;
+  const shown = lines.slice(0, maxLines);
+  const height = Math.max(
+    compact ? 168 : 200,
+    BODY_TOP + Math.max(shown.length, 1) * ROW_STEP + FOOTER_PAD,
+  );
+
+  const body = shown
+    .map((line, i) => row(BODY_TOP + i * ROW_STEP, line.key, line.value, theme, width))
     .join("");
 
   const icon = query.show_icons
     ? `<rect x="28" y="22" width="10" height="10" fill="${theme.accent}"/>`
     : "";
+
+  const footer = byline ? `${byline}  ${verifiedLabel}` : verifiedLabel;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(spec.title)}">
@@ -105,7 +154,7 @@ export function renderFetchSvg(
   ${text(query.show_icons ? 46 : 28, 32, "sharefetch", `fill="${theme.muted}" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" letter-spacing="0.18em"`)}
   ${text(28, 56, spec.title, `fill="${theme.foreground}" font-size="16" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"`)}
   ${body}
-  ${text(28, height - 18, `@${spec.handle}  verified ${verified}`, `fill="${theme.muted}" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"`)}
+  ${text(28, height - 18, footer, `fill="${theme.muted}" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"`)}
   <rect x="${width - 18}" y="18" width="6" height="6" fill="${theme.accent}"/>
 </svg>`;
 }

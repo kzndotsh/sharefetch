@@ -232,190 +232,34 @@
       }
     },
     "layers": {
-      "type": "object",
-      "properties": {
-        "system": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "type": "string",
-                "minLength": 1
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1
-              },
-              "value": {
-                "type": "string"
-              },
-              "toolSlug": {
-                "type": "string"
-              },
-              "note": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "key",
-              "label"
-            ],
-            "additionalProperties": false
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string"
+          },
+          "toolSlug": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
           }
         },
-        "desktop": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "type": "string",
-                "minLength": 1
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1
-              },
-              "value": {
-                "type": "string"
-              },
-              "toolSlug": {
-                "type": "string"
-              },
-              "note": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "key",
-              "label"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "shell": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "type": "string",
-                "minLength": 1
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1
-              },
-              "value": {
-                "type": "string"
-              },
-              "toolSlug": {
-                "type": "string"
-              },
-              "note": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "key",
-              "label"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "hardware": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "type": "string",
-                "minLength": 1
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1
-              },
-              "value": {
-                "type": "string"
-              },
-              "toolSlug": {
-                "type": "string"
-              },
-              "note": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "key",
-              "label"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "toolchain": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "type": "string",
-                "minLength": 1
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1
-              },
-              "value": {
-                "type": "string"
-              },
-              "toolSlug": {
-                "type": "string"
-              },
-              "note": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "key",
-              "label"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "aesthetic": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "type": "string",
-                "minLength": 1
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1
-              },
-              "value": {
-                "type": "string"
-              },
-              "toolSlug": {
-                "type": "string"
-              },
-              "note": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "key",
-              "label"
-            ],
-            "additionalProperties": false
-          }
-        }
-      },
-      "additionalProperties": false
+        "required": [
+          "key",
+          "label"
+        ],
+        "additionalProperties": false
+      }
     },
     "sectionOrder": {
       "type": "array",

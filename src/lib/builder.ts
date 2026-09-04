@@ -42,15 +42,15 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   title: "Title",
   desktop: "Desktop",
   displayServer: "Display server",
-  detail: "WM / DE / compositor detail",
+  detail: "Detail",
   distro: "Distro",
   colorscheme: "Colorscheme",
   utils: "Utils",
-  layers: "Layers",
-  colors: "Colors & theme",
+  layers: "Extra details",
+  colors: "Colors",
   decisions: "Decisions",
   visibility: "Visibility",
-  dotfilesUrl: "Dotfiles URL",
+  dotfilesUrl: "Dotfiles",
   screenshots: "Screenshots",
 };
 
@@ -226,6 +226,19 @@ export function prepareForPublish(spec: FetchSpec): FetchSpec {
     displayName: spec.displayName.trim() || handle,
     dotfilesUrl: spec.dotfilesUrl?.trim() ? spec.dotfilesUrl.trim() : undefined,
     screenshots: spec.screenshots?.filter((s) => s.url.trim()),
+    layers: spec.layers
+      .map((item) => {
+        const label = item.label.trim();
+        const key = (item.key.trim() || label).trim();
+        const value = item.value?.trim();
+        return {
+          ...item,
+          key,
+          label,
+          value: value || undefined,
+        };
+      })
+      .filter((item) => item.label.length > 0 && item.key.length > 0),
   };
 }
 
@@ -344,6 +357,84 @@ export function clearClaimSlot(
       return { ...spec, displayServer: undefined };
     default: {
       const _never: never = slot;
+      return _never;
+    }
+  }
+}
+
+export function sectionHasClearable(spec: FetchSpec, section: SectionKey): boolean {
+  switch (section) {
+    case "title":
+      return Boolean(spec.headline?.trim() || spec.displayName.trim());
+    case "desktop":
+      return Boolean(spec.desktop.kind || spec.desktop.slug || spec.desktop.label);
+    case "displayServer":
+      return Boolean(spec.displayServer);
+    case "detail":
+      return Boolean(spec.wm || spec.de || spec.compositor);
+    case "distro":
+      return Boolean(spec.distro);
+    case "colorscheme":
+      return Boolean(spec.colorscheme);
+    case "utils":
+      return spec.utils.items.length > 0;
+    case "layers":
+      return spec.layers.some(
+        (item) => item.label.trim() || (item.value ?? "").trim(),
+      );
+    case "colors":
+      return Boolean(
+        spec.theme ||
+          spec.colors?.background ||
+          spec.colors?.foreground ||
+          spec.colors?.accent ||
+          spec.colors?.muted,
+      );
+    case "decisions":
+      return Boolean(spec.decisions?.length);
+    case "visibility":
+      return spec.visibility !== "public";
+    case "dotfilesUrl":
+      return Boolean(spec.dotfilesUrl?.trim());
+    case "screenshots":
+      return Boolean(spec.screenshots?.length);
+    default: {
+      const _never: never = section;
+      return _never;
+    }
+  }
+}
+
+export function clearSection(spec: FetchSpec, section: SectionKey): FetchSpec {
+  switch (section) {
+    case "title":
+      return { ...spec, headline: undefined, displayName: "" };
+    case "desktop":
+      return clearClaimSlot(spec, "kind");
+    case "displayServer":
+      return clearClaimSlot(spec, "display");
+    case "detail":
+      return { ...spec, wm: undefined, de: undefined, compositor: undefined };
+    case "distro":
+      return clearClaimSlot(spec, "distro");
+    case "colorscheme":
+      return { ...spec, colorscheme: undefined };
+    case "utils":
+      return { ...spec, utils: { items: [] } };
+    case "layers":
+      return { ...spec, layers: [] };
+    case "colors":
+      return { ...spec, theme: undefined, colors: undefined };
+    case "decisions":
+      return { ...spec, decisions: undefined };
+    case "visibility":
+      return { ...spec, visibility: "public" };
+    case "dotfilesUrl":
+      return { ...spec, dotfilesUrl: undefined };
+    case "screenshots":
+      return { ...spec, screenshots: undefined };
+    default: {
+      const _never: never = section;
       return _never;
     }
   }

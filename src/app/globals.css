@@ -38,6 +38,23 @@ body:has([data-route="builder"]) .create-fetch-cta {
   display: none;
 }
 
+body:has([data-route="builder"]) main {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+}
+
+body:has([data-route="builder"]) > footer {
+  display: none;
+}
+
+.studio-canvas {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
 ::selection {
   background: var(--accent);
   color: var(--bg);
@@ -122,6 +139,7 @@ a {
   align-items: center;
   gap: 0.35rem;
   min-height: 2.25rem;
+  max-width: 100%;
   padding: 0.35rem 0.65rem;
   border: 1px solid var(--border);
   border-radius: 0;
@@ -208,6 +226,7 @@ a {
   border-radius: 0;
   color: var(--fg);
   cursor: pointer;
+  min-width: 0;
   transition: border-color 120ms ease;
 }
 

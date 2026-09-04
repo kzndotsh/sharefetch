@@ -19,7 +19,7 @@ const gnome = parseFetchSpec({
       { label: "Firefox", slug: "firefox", role: "browser" },
     ],
   },
-  layers: {},
+  layers: [],
   sectionOrder: [],
   tags: [],
 });
@@ -40,7 +40,7 @@ const hypr = parseFetchSpec({
       { label: "Waybar", slug: "waybar", role: "bar" },
     ],
   },
-  layers: {},
+  layers: [],
   sectionOrder: [],
   tags: [],
 });

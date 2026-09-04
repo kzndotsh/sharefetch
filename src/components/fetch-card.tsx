@@ -15,8 +15,10 @@ export function FetchCard({ row }: { row: FetchRow }) {
         >
           {spec.title}
         </Link>
-        <Link href={`/u/${row.handle}`} className="text-xs text-muted shrink-0">
-          @{row.handle}
+        <Link href={`/u/${row.handle}`} className="text-xs text-muted shrink-0 truncate max-w-[40%]">
+          {spec.displayName.trim() && spec.displayName.trim() !== row.handle
+            ? `${spec.displayName.trim()} · @${row.handle}`
+            : `@${row.handle}`}
         </Link>
       </div>
       <dl className="text-xs">
