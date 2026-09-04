@@ -232,15 +232,33 @@ export default async function FetchPage(props: PageProps<"/f/[id]">) {
           </section>
         ) : null}
 
-        {traits.length || spec.tags.length ? (
+        {traits.length ? (
           <section className="flex flex-col gap-2">
             <h2 className="label">Traits</h2>
             <div className="flex flex-wrap gap-1.5">
-              {traits.map((t) => (
-                <span key={t.slug} className="chip">{t.label}</span>
-              ))}
+              {traits.map((t) =>
+                t.href ? (
+                  <ChipLink key={t.id} href={t.href} active={false}>
+                    {t.label}
+                  </ChipLink>
+                ) : (
+                  <span key={t.id} className="chip">
+                    {t.label}
+                  </span>
+                ),
+              )}
+            </div>
+          </section>
+        ) : null}
+
+        {spec.tags.length ? (
+          <section className="flex flex-col gap-2">
+            <h2 className="label">Tags</h2>
+            <div className="flex flex-wrap gap-1.5">
               {spec.tags.map((t) => (
-                <span key={t} className="chip text-muted">#{t}</span>
+                <span key={t} className="chip text-muted">
+                  #{t}
+                </span>
               ))}
             </div>
           </section>

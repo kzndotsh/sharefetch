@@ -6,7 +6,9 @@ import {
   findColorscheme,
   findDistro,
   findUtil,
+  layoutLabel,
   lookupDesktop,
+  DESKTOP_LAYOUTS,
 } from "@/lib/catalogs";
 import {
   exploreHref,
@@ -94,6 +96,22 @@ export default async function ExplorePage(props: PageProps<"/explore">) {
           return (
             <ChipLink key={server} href={t.href} active={t.active}>
               {server}
+            </ChipLink>
+          );
+        })}
+      </Facet>
+      <Facet title="Layout">
+        {DESKTOP_LAYOUTS.map((layout) => {
+          const t = toggleHref(filters, "layout", layout);
+          const counted = facets.layout.find((row) => row.slug === layout);
+          return (
+            <ChipLink
+              key={layout}
+              href={t.href}
+              active={t.active}
+              count={counted?.count ?? 0}
+            >
+              {layoutLabel(layout)}
             </ChipLink>
           );
         })}

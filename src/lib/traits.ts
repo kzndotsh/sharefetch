@@ -1,59 +1,32 @@
 import {
   classifyDesktopSlug,
   defaultDisplayServer,
+  layoutLabel,
   lookupDesktop,
+  resolveDesktopLayout,
+  type DesktopLayout,
 } from "./catalogs";
+import { exploreHref } from "./explore-params";
 import type { DesktopKind, DisplayServer, FetchSpec } from "./fetch-spec";
 import { canonicalSlug, labeledFrom } from "./slug";
 
+export type TraitCategory =
+  | "kind"
+  | "display"
+  | "layout"
+  | "aesthetic"
+  | "platform";
+
 export type DerivedTrait = {
-  slug: string;
+  id: string;
+  category: TraitCategory;
   label: string;
+  href?: string;
 };
 
-const TILING_SLUGS = new Set([
-  "i3",
-  "bspwm",
-  "dwm",
-  "awesome",
-  "xmonad",
-  "qtile",
-  "herbstluftwm",
-  "leftwm",
-  "berry",
-  "hyprland",
-  "sway",
-  "swayfx",
-  "niri",
-  "river",
-  "labwc",
-  "dwl",
-  "yabai",
-  "aerospace",
-]);
-
-const STACKING_SLUGS = new Set([
-  "gnome",
-  "kde-plasma",
-  "xfce",
-  "cinnamon",
-  "mate",
-  "lxqt",
-  "openbox",
-  "icewm",
-  "fluxbox",
-  "jwm",
-  "wayfire",
-  "budgie",
-  "pantheon",
-  "deepin",
-  "enlightenment",
-  "trinity",
-  "cage",
-  "weston",
-]);
-
-export function deriveDisplayServer(spec: Pick<FetchSpec, "desktop" | "displayServer">): DisplayServer | undefined {
+export function deriveDisplayServer(
+  spec: Pick<FetchSpec, "desktop" | "displayServer">,
+): DisplayServer | undefined {
   if (spec.displayServer) {
     return spec.displayServer;
   }
@@ -63,31 +36,91 @@ export function deriveDisplayServer(spec: Pick<FetchSpec, "desktop" | "displaySe
   return defaultDisplayServer(spec.desktop.kind, spec.desktop.slug);
 }
 
+export function deriveLayout(
+  spec: Pick<FetchSpec, "desktop" | "wm">,
+): DesktopLayout | undefined {
+  return resolveDesktopLayout({
+    desktopSlug: spec.desktop.slug,
+    wmSlug: spec.wm?.slug,
+  });
+}
+
+function kindTraitLabel(kind: DesktopKind): string {
+  switch (kind) {
+    case "wm":
+      return "WM";
+    case "de":
+      return "DE";
+    case "compositor":
+      return "Compositor";
+    default: {
+      const _never: never = kind;
+      return _never;
+    }
+  }
+}
+
 export function deriveTraits(spec: FetchSpec): DerivedTrait[] {
   const traits: DerivedTrait[] = [];
-  const server = deriveDisplayServer(spec);
-  if (server === "wayland") {
-    traits.push({ slug: "wayland", label: "Wayland" });
-  } else if (server === "x11") {
-    traits.push({ slug: "x11", label: "X11" });
-  } else if (server === "quartz") {
-    traits.push({ slug: "quartz", label: "Quartz" });
-    traits.push({ slug: "macos-wm", label: "macOS WM" });
+
+  if (spec.desktop.kind) {
+    traits.push({
+      id: spec.desktop.kind,
+      category: "kind",
+      label: kindTraitLabel(spec.desktop.kind),
+      href: exploreHref({}, { kind: spec.desktop.kind }),
+    });
   }
 
-  const desktopSlug = spec.desktop.slug;
-  if (TILING_SLUGS.has(desktopSlug)) {
-    traits.push({ slug: "tiling", label: "tiling" });
+  const server = deriveDisplayServer(spec);
+  if (server === "wayland") {
+    traits.push({
+      id: "wayland",
+      category: "display",
+      label: "Wayland",
+      href: exploreHref({}, { displayServer: "wayland" }),
+    });
+  } else if (server === "x11") {
+    traits.push({
+      id: "x11",
+      category: "display",
+      label: "X11",
+      href: exploreHref({}, { displayServer: "x11" }),
+    });
+  } else if (server === "quartz") {
+    traits.push({
+      id: "quartz",
+      category: "display",
+      label: "Quartz",
+      href: exploreHref({}, { displayServer: "quartz" }),
+    });
+    traits.push({
+      id: "macos-wm",
+      category: "platform",
+      label: "macOS WM",
+    });
   }
-  if (STACKING_SLUGS.has(desktopSlug)) {
-    traits.push({ slug: "stacking", label: "stacking" });
+
+  const layout = deriveLayout(spec);
+  if (layout) {
+    traits.push({
+      id: layout,
+      category: "layout",
+      label: layoutLabel(layout),
+      href: exploreHref({}, { layout }),
+    });
   }
 
   const hasPywal =
     spec.colorscheme?.slug === "pywal" ||
     spec.utils.items.some((u) => u.slug === "pywal");
   if (hasPywal) {
-    traits.push({ slug: "dynamic-colors", label: "dynamic colors" });
+    traits.push({
+      id: "dynamic-colors",
+      category: "aesthetic",
+      label: "Dynamic colors",
+      href: exploreHref({}, { colorscheme: "pywal" }),
+    });
   }
 
   return traits;

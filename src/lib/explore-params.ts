@@ -1,4 +1,5 @@
 import type { ExploreFilters } from "@/db/queries";
+import { DESKTOP_LAYOUTS } from "./catalogs";
 import { DESKTOP_KINDS, DISPLAY_SERVERS } from "./fetch-spec";
 
 export type SearchParams = Record<string, string | string[] | undefined>;
@@ -24,6 +25,7 @@ export function parseExploreFilters(params: SearchParams): ExploreFilters {
     colorscheme: single(params.colorscheme),
     util: single(params.util),
     displayServer: oneOf(single(params.displayServer), DISPLAY_SERVERS),
+    layout: oneOf(single(params.layout), DESKTOP_LAYOUTS),
     sort: oneOf(single(params.sort), ["latest", "random"] as const) ?? "latest",
   };
 }

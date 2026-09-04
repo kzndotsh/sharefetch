@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { mapAwesomeDotfiles } from "./awesome-dotfiles";
+import {
+  DESKTOP_COMPOSITOR,
+  DESKTOP_DE,
+  DESKTOP_WM,
+  resolveDesktopLayout,
+} from "./catalogs";
 import { parseFetchPaste } from "./paste";
 import { hydrateFetchSpec, parseFetchSpec } from "./fetch-spec";
 import { canonicalSlug } from "./slug";
@@ -10,6 +16,21 @@ describe("slug synonyms", () => {
     expect(canonicalSlug("Hyprland")).toBe("hyprland");
     expect(canonicalSlug("arch")).toBe("arch-linux");
     expect(canonicalSlug("KDE Plasma")).toBe("kde-plasma");
+  });
+});
+
+describe("desktop catalog layout", () => {
+  it("annotates every desktop entry with a layout", () => {
+    for (const entry of [...DESKTOP_WM, ...DESKTOP_DE, ...DESKTOP_COMPOSITOR]) {
+      expect(entry.layout, entry.slug).toBeTruthy();
+    }
+  });
+
+  it("resolves niri as scrollable and prefers wm over de", () => {
+    expect(resolveDesktopLayout({ desktopSlug: "niri" })).toBe("scrollable");
+    expect(
+      resolveDesktopLayout({ desktopSlug: "kde-plasma", wmSlug: "i3" }),
+    ).toBe("tiling");
   });
 });
 
@@ -140,7 +161,7 @@ describe("awesome-dotfiles mapper", () => {
 });
 
 describe("derived traits", () => {
-  it("marks pywal as dynamic-colors", () => {
+  it("marks pywal as dynamic-colors with kind, display, and layout", () => {
     const traits = deriveTraits(
       parseFetchSpec({
         specVersion: 1,
@@ -157,8 +178,91 @@ describe("derived traits", () => {
         tags: [],
       }),
     );
-    expect(traits.map((t) => t.slug)).toContain("dynamic-colors");
-    expect(traits.map((t) => t.slug)).toContain("x11");
-    expect(traits.map((t) => t.slug)).toContain("tiling");
+    const ids = traits.map((t) => t.id);
+    expect(ids).toContain("wm");
+    expect(ids).toContain("dynamic-colors");
+    expect(ids).toContain("x11");
+    expect(ids).toContain("tiling");
+    expect(traits.find((t) => t.id === "tiling")?.label).toBe("Tiling");
+    expect(traits.find((t) => t.id === "tiling")?.href).toContain("layout=tiling");
+  });
+
+  it("classifies Awesome as dynamic and Niri as scrollable", () => {
+    const awesome = deriveTraits(
+      parseFetchSpec({
+        specVersion: 1,
+        title: "aw",
+        displayName: "ada",
+        handle: "ada",
+        visibility: "public",
+        desktop: { kind: "wm", label: "Awesome", slug: "awesome" },
+        displayServer: "x11",
+        utils: { items: [] },
+        layers: [],
+        sectionOrder: [],
+        tags: [],
+      }),
+    );
+    expect(awesome.map((t) => t.id)).toContain("dynamic");
+    expect(awesome.find((t) => t.id === "dynamic")?.label).toBe("Dynamic");
+
+    const niri = deriveTraits(
+      parseFetchSpec({
+        specVersion: 1,
+        title: "niri",
+        displayName: "ada",
+        handle: "ada",
+        visibility: "public",
+        desktop: { kind: "compositor", label: "Niri", slug: "niri" },
+        displayServer: "wayland",
+        utils: { items: [] },
+        layers: [],
+        sectionOrder: [],
+        tags: [],
+      }),
+    );
+    expect(niri.map((t) => t.id)).toContain("scrollable");
+    expect(niri.find((t) => t.id === "stacking")).toBeUndefined();
+  });
+
+  it("uses replaced WM layout for a DE stack", () => {
+    const traits = deriveTraits(
+      parseFetchSpec({
+        specVersion: 1,
+        title: "plasma+i3",
+        displayName: "ada",
+        handle: "ada",
+        visibility: "public",
+        desktop: { kind: "de", label: "KDE Plasma", slug: "kde-plasma" },
+        wm: { label: "i3", slug: "i3" },
+        displayServer: "x11",
+        utils: { items: [] },
+        layers: [],
+        sectionOrder: [],
+        tags: [],
+      }),
+    );
+    expect(traits.map((t) => t.id)).toContain("tiling");
+    expect(traits.map((t) => t.id)).not.toContain("stacking");
+    expect(traits.find((t) => t.id === "stacking" || t.label === "Floating")).toBeUndefined();
+  });
+
+  it("labels stacking desktops as Floating", () => {
+    const traits = deriveTraits(
+      parseFetchSpec({
+        specVersion: 1,
+        title: "wayfire",
+        displayName: "ada",
+        handle: "ada",
+        visibility: "public",
+        desktop: { kind: "compositor", label: "Wayfire", slug: "wayfire" },
+        displayServer: "wayland",
+        utils: { items: [] },
+        layers: [],
+        sectionOrder: [],
+        tags: [],
+      }),
+    );
+    expect(traits.find((t) => t.id === "stacking")?.label).toBe("Floating");
   });
 });

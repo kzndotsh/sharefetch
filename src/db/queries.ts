@@ -5,6 +5,7 @@ import { fetchChangelog, fetches, fetchUtils, tools, user } from "@/db/schema";
 import { summarizeMutation } from "@/lib/changelog";
 import type { FetchSpec, PublishedFetchSpec } from "@/lib/fetch-spec";
 import { hydrateFetchSpec, parseFetchSpec } from "@/lib/fetch-spec";
+import { resolveDesktopLayout } from "@/lib/catalogs";
 
 export type ExploreFilters = {
   q?: string;
@@ -14,6 +15,7 @@ export type ExploreFilters = {
   colorscheme?: string;
   util?: string;
   displayServer?: string;
+  layout?: string;
   sort?: "latest" | "random";
 };
 
@@ -32,6 +34,11 @@ export function denormalize(spec: PublishedFetchSpec) {
     distroSlug: spec.distro?.slug ?? null,
     colorschemeSlug: spec.colorscheme?.slug ?? null,
     displayServer: spec.displayServer ?? null,
+    layout:
+      resolveDesktopLayout({
+        desktopSlug: spec.desktop.slug,
+        wmSlug: spec.wm?.slug,
+      }) ?? null,
   };
 }
 
@@ -146,6 +153,9 @@ export async function listExplore(filters: ExploreFilters) {
   if (filters.displayServer) {
     clauses.push(eq(fetches.displayServer, filters.displayServer));
   }
+  if (filters.layout) {
+    clauses.push(eq(fetches.layout, filters.layout));
+  }
   if (filters.q) {
     const q = `%${filters.q}%`;
     clauses.push(or(ilike(fetches.title, q), ilike(fetches.handle, q))!);
@@ -214,7 +224,15 @@ export async function facetCounts() {
     .innerJoin(fetches, eq(fetches.id, fetchUtils.fetchId))
     .where(publicOnly)
     .groupBy(fetchUtils.slug);
-  return { desktop, distro, colorscheme, utils };
+  const layout = await db
+    .select({
+      slug: fetches.layout,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(fetches)
+    .where(publicOnly)
+    .groupBy(fetches.layout);
+  return { desktop, distro, colorscheme, utils, layout };
 }
 
 export async function listByHandle(handle: string) {

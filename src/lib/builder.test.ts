@@ -172,11 +172,18 @@ describe("explore params", () => {
       desktop: "gnome",
       sort: "random",
       displayServer: ["wayland"],
+      layout: "floating",
     });
     expect(filters.kind).toBeUndefined();
     expect(filters.desktop).toBe("gnome");
     expect(filters.sort).toBe("random");
     expect(filters.displayServer).toBe("wayland");
+    expect(filters.layout).toBeUndefined();
+  });
+
+  it("parses layout facet values", () => {
+    expect(parseExploreFilters({ layout: "scrollable" }).layout).toBe("scrollable");
+    expect(parseExploreFilters({ layout: "dynamic" }).layout).toBe("dynamic");
   });
 
   it("builds toggle hrefs and omits the default sort", () => {

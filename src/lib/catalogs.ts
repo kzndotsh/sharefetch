@@ -1,9 +1,20 @@
 import type { DesktopKind, DisplayServer, UtilRole } from "./fetch-spec";
 
+/** ArchWiki WM types + scrollable (Niri / PaperWM-class). */
+export const DESKTOP_LAYOUTS = [
+  "tiling",
+  "stacking",
+  "dynamic",
+  "scrollable",
+] as const;
+export type DesktopLayout = (typeof DESKTOP_LAYOUTS)[number];
+
 export type CatalogEntry = {
   slug: string;
   label: string;
   displayServer?: DisplayServer;
+  /** Window layout class; required on desktop catalog entries. */
+  layout?: DesktopLayout;
 };
 
 export type UtilCatalogEntry = CatalogEntry & {
@@ -11,51 +22,114 @@ export type UtilCatalogEntry = CatalogEntry & {
 };
 
 export const DESKTOP_WM: CatalogEntry[] = [
-  { slug: "i3", label: "i3", displayServer: "x11" },
-  { slug: "bspwm", label: "bspwm", displayServer: "x11" },
-  { slug: "dwm", label: "dwm", displayServer: "x11" },
-  { slug: "awesome", label: "Awesome", displayServer: "x11" },
-  { slug: "xmonad", label: "xmonad", displayServer: "x11" },
-  { slug: "qtile", label: "Qtile", displayServer: "x11" },
-  { slug: "herbstluftwm", label: "herbstluftwm", displayServer: "x11" },
-  { slug: "openbox", label: "Openbox", displayServer: "x11" },
-  { slug: "leftwm", label: "LeftWM", displayServer: "x11" },
-  { slug: "icewm", label: "IceWM", displayServer: "x11" },
-  { slug: "fluxbox", label: "Fluxbox", displayServer: "x11" },
-  { slug: "jwm", label: "JWM", displayServer: "x11" },
-  { slug: "berry", label: "berry", displayServer: "x11" },
-  { slug: "yabai", label: "yabai", displayServer: "quartz" },
-  { slug: "aerospace", label: "AeroSpace", displayServer: "quartz" },
-  { slug: "amethyst", label: "Amethyst", displayServer: "quartz" },
+  { slug: "i3", label: "i3", displayServer: "x11", layout: "tiling" },
+  { slug: "bspwm", label: "bspwm", displayServer: "x11", layout: "tiling" },
+  { slug: "dwm", label: "dwm", displayServer: "x11", layout: "dynamic" },
+  { slug: "awesome", label: "Awesome", displayServer: "x11", layout: "dynamic" },
+  { slug: "xmonad", label: "xmonad", displayServer: "x11", layout: "dynamic" },
+  { slug: "qtile", label: "Qtile", displayServer: "x11", layout: "dynamic" },
+  {
+    slug: "herbstluftwm",
+    label: "herbstluftwm",
+    displayServer: "x11",
+    layout: "tiling",
+  },
+  { slug: "openbox", label: "Openbox", displayServer: "x11", layout: "stacking" },
+  { slug: "leftwm", label: "LeftWM", displayServer: "x11", layout: "tiling" },
+  { slug: "icewm", label: "IceWM", displayServer: "x11", layout: "stacking" },
+  { slug: "fluxbox", label: "Fluxbox", displayServer: "x11", layout: "stacking" },
+  { slug: "jwm", label: "JWM", displayServer: "x11", layout: "stacking" },
+  { slug: "berry", label: "berry", displayServer: "x11", layout: "stacking" },
+  { slug: "yabai", label: "yabai", displayServer: "quartz", layout: "tiling" },
+  {
+    slug: "aerospace",
+    label: "AeroSpace",
+    displayServer: "quartz",
+    layout: "tiling",
+  },
+  {
+    slug: "amethyst",
+    label: "Amethyst",
+    displayServer: "quartz",
+    layout: "tiling",
+  },
 ];
 
 export const DESKTOP_DE: CatalogEntry[] = [
-  { slug: "gnome", label: "GNOME", displayServer: "wayland" },
-  { slug: "kde-plasma", label: "KDE Plasma", displayServer: "wayland" },
-  { slug: "xfce", label: "XFCE", displayServer: "x11" },
-  { slug: "cinnamon", label: "Cinnamon", displayServer: "x11" },
-  { slug: "mate", label: "MATE", displayServer: "x11" },
-  { slug: "lxqt", label: "LXQt", displayServer: "x11" },
-  { slug: "budgie", label: "Budgie", displayServer: "x11" },
-  { slug: "cosmic", label: "COSMIC", displayServer: "wayland" },
-  { slug: "pantheon", label: "Pantheon", displayServer: "x11" },
-  { slug: "deepin", label: "Deepin", displayServer: "x11" },
-  { slug: "enlightenment", label: "Enlightenment", displayServer: "x11" },
-  { slug: "trinity", label: "Trinity", displayServer: "x11" },
+  { slug: "gnome", label: "GNOME", displayServer: "wayland", layout: "stacking" },
+  {
+    slug: "kde-plasma",
+    label: "KDE Plasma",
+    displayServer: "wayland",
+    layout: "stacking",
+  },
+  { slug: "xfce", label: "XFCE", displayServer: "x11", layout: "stacking" },
+  {
+    slug: "cinnamon",
+    label: "Cinnamon",
+    displayServer: "x11",
+    layout: "stacking",
+  },
+  { slug: "mate", label: "MATE", displayServer: "x11", layout: "stacking" },
+  { slug: "lxqt", label: "LXQt", displayServer: "x11", layout: "stacking" },
+  { slug: "lxde", label: "LXDE", displayServer: "x11", layout: "stacking" },
+  { slug: "budgie", label: "Budgie", displayServer: "x11", layout: "stacking" },
+  { slug: "cosmic", label: "COSMIC", displayServer: "wayland", layout: "stacking" },
+  {
+    slug: "pantheon",
+    label: "Pantheon",
+    displayServer: "x11",
+    layout: "stacking",
+  },
+  { slug: "deepin", label: "Deepin", displayServer: "x11", layout: "stacking" },
+  {
+    slug: "enlightenment",
+    label: "Enlightenment",
+    displayServer: "x11",
+    layout: "stacking",
+  },
+  { slug: "trinity", label: "Trinity", displayServer: "x11", layout: "stacking" },
+  {
+    slug: "gnome-flashback",
+    label: "GNOME Flashback",
+    displayServer: "x11",
+    layout: "stacking",
+  },
+  { slug: "phosh", label: "Phosh", displayServer: "wayland", layout: "stacking" },
 ];
 
 export const DESKTOP_COMPOSITOR: CatalogEntry[] = [
-  { slug: "hyprland", label: "Hyprland", displayServer: "wayland" },
-  { slug: "sway", label: "Sway", displayServer: "wayland" },
-  { slug: "swayfx", label: "SwayFX", displayServer: "wayland" },
-  { slug: "niri", label: "Niri", displayServer: "wayland" },
-  { slug: "river", label: "River", displayServer: "wayland" },
-  { slug: "wayfire", label: "Wayfire", displayServer: "wayland" },
-  { slug: "labwc", label: "labwc", displayServer: "wayland" },
-  { slug: "cage", label: "Cage", displayServer: "wayland" },
-  { slug: "miracle-wm", label: "Miracle", displayServer: "wayland" },
-  { slug: "dwl", label: "dwl", displayServer: "wayland" },
-  { slug: "weston", label: "Weston", displayServer: "wayland" },
+  {
+    slug: "hyprland",
+    label: "Hyprland",
+    displayServer: "wayland",
+    layout: "tiling",
+  },
+  { slug: "sway", label: "Sway", displayServer: "wayland", layout: "tiling" },
+  { slug: "swayfx", label: "SwayFX", displayServer: "wayland", layout: "tiling" },
+  {
+    slug: "niri",
+    label: "Niri",
+    displayServer: "wayland",
+    layout: "scrollable",
+  },
+  { slug: "river", label: "River", displayServer: "wayland", layout: "tiling" },
+  {
+    slug: "wayfire",
+    label: "Wayfire",
+    displayServer: "wayland",
+    layout: "stacking",
+  },
+  { slug: "labwc", label: "labwc", displayServer: "wayland", layout: "stacking" },
+  { slug: "cage", label: "Cage", displayServer: "wayland", layout: "stacking" },
+  {
+    slug: "miracle-wm",
+    label: "Miracle",
+    displayServer: "wayland",
+    layout: "tiling",
+  },
+  { slug: "dwl", label: "dwl", displayServer: "wayland", layout: "tiling" },
+  { slug: "weston", label: "Weston", displayServer: "wayland", layout: "stacking" },
 ];
 
 export const DISTROS: CatalogEntry[] = [
@@ -237,6 +311,56 @@ export function defaultDisplayServer(
 ): DisplayServer | undefined {
   const list = catalogForKind(kind);
   return list.find((e) => e.slug === slug)?.displayServer;
+}
+
+export function defaultLayout(
+  kind: DesktopKind,
+  slug: string,
+): DesktopLayout | undefined {
+  const list = catalogForKind(kind);
+  return list.find((e) => e.slug === slug)?.layout;
+}
+
+export function layoutForSlug(slug: string): DesktopLayout | undefined {
+  return lookupDesktop(slug)?.entry.layout;
+}
+
+/** Prefer replaced WM slug when a DE runs a custom window manager. */
+export function layoutSourceSlug(input: {
+  desktopSlug?: string;
+  wmSlug?: string;
+}): string | undefined {
+  const wm = input.wmSlug?.trim();
+  if (wm) {
+    return wm;
+  }
+  const desktop = input.desktopSlug?.trim();
+  return desktop || undefined;
+}
+
+export function resolveDesktopLayout(input: {
+  desktopSlug?: string;
+  wmSlug?: string;
+}): DesktopLayout | undefined {
+  const slug = layoutSourceSlug(input);
+  return slug ? layoutForSlug(slug) : undefined;
+}
+
+export function layoutLabel(layout: DesktopLayout): string {
+  switch (layout) {
+    case "tiling":
+      return "Tiling";
+    case "stacking":
+      return "Floating";
+    case "dynamic":
+      return "Dynamic";
+    case "scrollable":
+      return "Scrollable";
+    default: {
+      const _never: never = layout;
+      return _never;
+    }
+  }
 }
 
 export function findUtil(slug: string): UtilCatalogEntry | undefined {
