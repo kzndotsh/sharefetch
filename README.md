@@ -1,20 +1,12 @@
 # Sharefetch
 
-Publish a desktop stack as a typed **fetch**, share it as an SVG, and browse others by real facets — not screenshots.
+Desktop stack cards you can publish, upvote, and embed as SVG.
 
-A fetch is a `FetchSpec`: desktop (WM / DE / compositor), layout, distro, theme, utils, optional layers. Explore ranks public fetches; upvotes are one per actor. Embeds are live SVG URLs you can drop in a README.
+Build a fetch at `/new`, browse `/explore`, drop the image URL in a README. Guests can publish; GitHub OAuth is optional.
 
-**WM ≠ DE ≠ compositor.** GNOME is a DE. i3 is a WM. Hyprland is a compositor. Those are separate kinds on `desktop.kind`.
+## Run
 
-## Stack
-
-- Next.js (App Router) + React
-- Postgres + Drizzle
-- Better Auth (optional GitHub OAuth; guests can publish)
-
-## Setup
-
-Postgres is required. Compose binds **5433** so it does not collide with a local 5432.
+Needs Postgres. Compose uses port **5433** to avoid clashing with a local 5432.
 
 ```bash
 cp .env.example .env
@@ -22,58 +14,52 @@ docker compose up -d
 pnpm install
 pnpm db:push
 pnpm db:seed
-pnpm test
 pnpm dev
 ```
 
-App: http://localhost:3000
+Open http://localhost:3000
 
-If you already run Postgres, set `DATABASE_URL` to a `sharefetch` database and skip Compose.
+Already have Postgres? Set `DATABASE_URL` and skip Compose.
 
-## Routes
-
-| Path | |
-| --- | --- |
-| `/` | Home |
-| `/new` | Builder (live SVG + stack editor) |
-| `/explore` | Public board (popular / latest / random, filters, votes) |
-| `/f/[id]` | Fetch page + embed snippet |
-| `/u/[handle]` | Profile |
-| `/embed/[id].svg` | Embeddable card |
-
-## Embed
-
-```md
-![fetch](http://localhost:3000/embed/<id>.svg?theme=dark&v=<updatedAt>)
+```bash
+pnpm test          # vitest
+pnpm db:generate   # drizzle migration from schema
+pnpm db:migrate
+pnpm docs:schema   # docs/schema.json
+pnpm docs:svg      # sample SVGs in docs/
 ```
 
-| Param | |
-| --- | --- |
-| `theme` | `default`, `dark`, `light`, `tokyonight`, `gruvbox`, `nord`, `catppuccin` |
-| `hide` | comma list, e.g. `distro,utils` |
-| `show_icons` | `true` |
-| `layout` | `compact` \| `full` |
-| `v` | cache buster — use `updatedAt` from **Re-verify** |
+## Use
 
-Cache is short (`max-age=600`). Self-host if the image matters in a README.
+1. **Create** — `/new`. Fill the stack (or paste fastfetch JSON). Publish.
+2. **Share** — copy the markdown snippet from the fetch page (`/f/<id>`).
+3. **Explore** — `/explore`. Filter, sort popular/latest, upvote.
+4. **Topics** — `/t`. Browse desktops, distros, themes, and utils used on public fetches.
+5. **Users** — `/u`. People with public fetches; each opens `/u/<handle>`.
 
-## Scripts
+Embed example:
 
-| | |
-| --- | --- |
-| `pnpm db:generate` / `db:migrate` / `db:push` | Schema |
-| `pnpm db:seed` | Sample public fetches |
-| `pnpm test` | Vitest |
-| `pnpm docs:schema` | Write `docs/schema.json` |
-| `pnpm docs:svg` | Sample SVGs under `docs/` |
+```md
+![fetch](https://your.host/embed/<id>.svg?theme=dark&v=<updatedAt>)
+```
+
+Useful query params: `theme`, `hide=distro,utils`, `layout=compact|full`, `v` (cache buster — bump via **Re-verify**). Themes: `default`, `dark`, `light`, `tokyonight`, `gruvbox`, `nord`, `catppuccin`.
+
+Embeds cache for ~10 minutes. Self-host if the badge matters.
 
 ## Auth
 
-GitHub OAuth is optional (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`). Publishing works with a guest cookie and handle.
+Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` (see `.env.example`). For GitHub sign-in, add `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`. Without that, publish still works via guest cookie + handle.
 
-## Extending
+## Code map
 
-- **Slug synonyms** — `SYNONYMS` in `src/lib/slug.ts` (`arch` → `arch-linux`)
-- **Catalogs** — desktops, distros, themes, utils in `src/lib/catalogs.ts` (see `docs/catalog.md`)
-- **Embed themes** — `EMBED_THEMES` + `THEME_MAP` in `src/lib/embed-query.ts`
-- **Spec** — Zod model in `src/lib/fetch-spec.ts`; JSON Schema via `pnpm docs:schema`
+| Area | Where |
+| --- | --- |
+| Fetch schema | `src/lib/fetch-spec.ts` |
+| Catalogs / synonyms | `src/lib/catalogs.ts`, `src/lib/slug.ts` |
+| SVG render | `src/lib/svg.ts` |
+| Embed themes | `src/lib/embed-query.ts` |
+| DB | `src/db/schema.ts`, `src/db/queries.ts` |
+| Server actions | `src/app/actions/` |
+| Builder UI | `src/app/new/` |
+| Catalog notes | `docs/catalog.md` |
